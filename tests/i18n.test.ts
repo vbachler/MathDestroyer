@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SECTORS } from '../src/core/content';
 import { MODULES } from '../src/core/economy';
+import { sectorCategories } from '../src/core/facts';
 import { createI18n, formatNumber, opSymbol, pluralCategory } from '../src/core/i18n';
 import { UPGRADES } from '../src/core/upgrades';
 import enBattle from '../src/locales/en/battle.json';
@@ -120,6 +121,15 @@ describe('locale files', () => {
     for (const d of [dicts.hr, dicts.en]) {
       expect(Object.keys(d).filter((k) => /^meta\.(system|planet)\./.test(k))).toEqual([]);
       expect(Object.keys(d).filter((k) => k.startsWith('meta.sector.')).sort()).toEqual(SECTORS.map((s) => s.nameKey).sort());
+    }
+  });
+
+  it('every category of a generated sector has a short name, and no other category keys exist', () => {
+    const names = [...new Set(SECTORS.flatMap((s) => sectorCategories(s.id)))].sort();
+    for (const d of [dicts.hr, dicts.en]) {
+      expect(Object.keys(d).filter((k) => k.startsWith('meta.category.')).map((k) => k.slice('meta.category.'.length)).sort())
+        .toEqual(names);
+      for (const n of names) expect(d[`meta.category.${n}`].length, n).toBeLessThanOrEqual(32);
     }
   });
 

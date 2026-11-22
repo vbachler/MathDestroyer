@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { CORE_PLANET_ID, PLANETS, planetsOfSector } from '../src/core/content';
-import { allFacts, factById } from '../src/core/facts';
+import { SECTORS } from '../src/core/content';
+import { makeFact } from '../src/core/factgen';
+import { factById, sectorStatIds } from '../src/core/facts';
 import {
-  BOX_INTERVAL_MS, MASTERED_BOX, applyOutcome, classify, dueFacts, emptyStats, factLevel, isDue,
-  fastThresholdMs, isMastered, masteryBand, planetMastery, skillMastery,
+  BOX_INTERVAL_MS, LEVEL_UP_ACCURACY, MASTERED_BOX, MAX_PLANET_LEVEL, PLANET_INTERVAL_MS, applyOutcome, applyPlanetResult,
+  classify, emptyProgress, emptyStats, factLevel, fastThresholdMs, galaxyKnowledge, isDue, isMastered, isPlanetDue,
+  knowledge, masteryBand, planetMastery, planetProgress, sectorKnowledge,
 } from '../src/core/mastery';
 import type { Fact } from '../src/core/types';
-import { NOW, stat, statsFor } from './helpers';
+import { DAY, NOW, progress, stat, statsFor } from './helpers';
 
 const f = (id: string): Fact => factById(id)!;
 
@@ -24,7 +26,7 @@ describe('classify', () => {
   });
 
   it('ignores the sign when counting digits and scales with a multiplier', () => {
-    const neg = allFacts().find((x) => x.planetId.startsWith('neg-20') && x.answer <= -10)!;
+    const neg = makeFact('add', -15, 3);   // answer -12
     expect(fastThresholdMs(neg)).toBe(3700);
     expect(fastThresholdMs(f('mul:2x3'), 1.1)).toBeCloseTo(3300);
   });
@@ -148,39 +150,6 @@ describe('levels', () => {
     expect(factLevel(stat(2))).toBeCloseTo(0.4);
   });
 
-  it('planetMastery is the mean fact level', () => {
-    expect(planetMastery('mul-c.4', {})).toBe(0);
-    expect(planetMastery('mul-c.4', statsFor(['mul-c.4'], 5))).toBe(1);
-    const twoOfFive = { 'mul:7x6': stat(5), 'mul:7x7': stat(5) };
-    expect(planetMastery('mul-c.4', twoOfFive)).toBeCloseTo(0.4);
-    expect(planetMastery('nope', {})).toBe(0);
-  });
-
-  it('planetMastery of the core planet is the mean over every fact', () => {
-    expect(planetMastery(CORE_PLANET_ID, {})).toBe(0);
-    const typing = planetsOfSector('type-1').map((p) => p.id);
-    expect(planetMastery(CORE_PLANET_ID, statsFor(typing, 5))).toBeCloseTo(10 / allFacts().length);
-  });
-
-  it('skillMastery is the mean of the planets of every sector of the skill', () => {
-    const typingPlanets = ['type-1', 'type-2', 'type-3'].flatMap((s) => planetsOfSector(s).map((p) => p.id));
-    expect(typingPlanets).toHaveLength(12);
-    expect(skillMastery('typing', statsFor(planetsOfSector('type-1').map((p) => p.id), 5))).toBeCloseTo(2 / 12);
-    expect(skillMastery('typing', statsFor(typingPlanets, 5))).toBe(1);
-    expect(skillMastery('mixed', {})).toBe(0);
-    expect(PLANETS.length).toBeGreaterThan(typingPlanets.length);
-  });
-
-  it('dueFacts: seen facts with dueAt <= now', () => {
-    const stats = {
-      'mul:7x1': stat(2, { dueAt: NOW - 1 }),
-      'mul:7x2': stat(2, { dueAt: NOW }),
-      'mul:7x3': stat(2, { dueAt: NOW + 1 }),
-      'mul:7x4': stat(0, { attempts: 0, dueAt: 0 }),
-    };
-    expect(dueFacts('mul-c.3', stats, NOW).map((x) => x.id)).toEqual(['mul:7x1', 'mul:7x2']);
-  });
-
   it('masteryBand boundaries', () => {
     expect(masteryBand(0)).toBe(0);
     expect(masteryBand(0.0999)).toBe(0);
@@ -192,5 +161,85 @@ describe('levels', () => {
     expect(masteryBand(0.8499)).toBe(3);
     expect(masteryBand(0.85)).toBe(4);
     expect(masteryBand(1)).toBe(4);
+  });
+
+  it('knowledge: mean box / 5 over stat ids, per sector and over the galaxy', () => {
+    expect(knowledge([], {})).toBe(0);
+    expect(knowledge(['a', 'b'], { a: stat(5) })).toBe(0.5);
+    expect(sectorKnowledge('mul-c', {})).toBe(0);
+    expect(sectorKnowledge('mul-c', statsFor(['mul-c'], 5))).toBe(1);
+    expect(sectorKnowledge('add-100', { 'cat:add-100:carry': stat(5), 'cat:add-100:easy': stat(2) })).toBeCloseTo(7 / 15);
+    expect(sectorKnowledge('nope', {})).toBe(0);
+    const all = SECTORS.flatMap((s) => sectorStatIds(s.id)).length;
+    expect(galaxyKnowledge(statsFor(['type-1'], 5))).toBeCloseTo(10 / all);
+  });
+});
+
+describe('planet progress', () => {
+  const won = (accuracy: number, now = NOW) => ({ won: true, accuracy, now });
+  const lost = { won: false, accuracy: 1, now: NOW };
+
+  it('intervals: 0, 20 min, 1, 3, 7, 21 days', () => {
+    expect(PLANET_INTERVAL_MS).toEqual([0, 20 * 60e3, DAY, 3 * DAY, 7 * DAY, 21 * DAY]);
+    expect(LEVEL_UP_ACCURACY).toBe(0.8);
+    expect(MAX_PLANET_LEVEL).toBe(5);
+  });
+
+  it('isPlanetDue: level 0 always, else now >= dueAt', () => {
+    expect(isPlanetDue(emptyProgress(), NOW)).toBe(true);
+    expect(isPlanetDue(progress(0, { dueAt: NOW + DAY }), NOW)).toBe(true);
+    expect(isPlanetDue(progress(2, { dueAt: NOW }), NOW)).toBe(true);
+    expect(isPlanetDue(progress(2, { dueAt: NOW + 1 }), NOW)).toBe(false);
+  });
+
+  it('a won, due mission with accuracy >= 0.8 raises the level and reschedules by the new level', () => {
+    // Level 0 jumps to 2, due again in 20 min (Review fixes v5).
+    expect(applyPlanetResult(emptyProgress(), won(0.8))).toEqual({ level: 2, dueAt: NOW + PLANET_INTERVAL_MS[1], wins: 1 });
+    expect(PLANET_INTERVAL_MS[1]).toBe(20 * 60e3);
+    for (let level = 1; level <= 4; level++) {
+      const p = applyPlanetResult(progress(level, { dueAt: NOW, wins: 7 }), won(1));
+      expect(p).toEqual({ level: level + 1, dueAt: NOW + PLANET_INTERVAL_MS[level + 1], wins: 8 });
+    }
+    expect(applyPlanetResult(progress(5, { dueAt: NOW - 1 }), won(0.9))).toEqual({ level: 5, dueAt: NOW + 21 * DAY, wins: 6 });
+  });
+
+  it('a win when not due, or with accuracy below 0.8, changes only wins', () => {
+    const notDue = progress(2, { dueAt: NOW + 1, wins: 3 });
+    expect(applyPlanetResult(notDue, won(1))).toEqual({ ...notDue, wins: 4 });
+    const due = progress(2, { dueAt: NOW, wins: 3 });
+    expect(applyPlanetResult(due, won(0.79))).toEqual({ ...due, wins: 4 });
+    expect(applyPlanetResult(emptyProgress(), won(0.5))).toEqual({ level: 0, dueAt: 0, wins: 1 });
+  });
+
+  it('a lost mission lowers the level by 1 (min 0) and makes the planet due now', () => {
+    expect(applyPlanetResult(progress(3, { wins: 4 }), lost)).toEqual({ level: 2, dueAt: NOW, wins: 4 });
+    expect(applyPlanetResult(emptyProgress(), lost)).toEqual({ level: 0, dueAt: NOW, wins: 0 });
+  });
+
+  it('a good first win gives level 2; a second good win 20 min later in the same session secures it', () => {
+    let p = emptyProgress();
+    for (let i = 0; i < 5; i++) p = applyPlanetResult(p, won(1, NOW + i * 60e3));
+    expect(p.level).toBe(2);
+    p = applyPlanetResult(p, won(1, NOW + 20 * 60e3));
+    expect(p).toEqual({ level: 3, dueAt: NOW + 20 * 60e3 + PLANET_INTERVAL_MS[3], wins: 6 });
+    p = applyPlanetResult(p, won(1, NOW + 21 * 60e3));
+    expect(p.level).toBe(3);
+    p = applyPlanetResult(p, won(1, NOW + 20 * 60e3 + 3 * DAY));
+    expect(p.level).toBe(4);
+  });
+
+  it('after a loss back to level 0, a good win again gives level 2; from level 1 it is +1', () => {
+    const fell = applyPlanetResult(progress(1, { wins: 2 }), lost);
+    expect(fell.level).toBe(0);
+    expect(applyPlanetResult(fell, won(0.9)).level).toBe(2);
+    expect(applyPlanetResult(progress(1, { dueAt: NOW }), won(0.9)).level).toBe(2);
+  });
+
+  it('planetMastery = level / 5 from save.planets (0 when missing)', () => {
+    const save = { planets: { 'add-10.2': progress(3) } };
+    expect(planetMastery('add-10.2', save)).toBeCloseTo(0.6);
+    expect(planetMastery('add-10.1', save)).toBe(0);
+    expect(planetMastery('nope', save)).toBe(0);
+    expect(planetProgress(save, 'add-10.1')).toEqual(emptyProgress());
   });
 });

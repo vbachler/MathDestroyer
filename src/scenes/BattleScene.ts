@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { app } from '../app';
 import { BattleSim, DOME_X, IMPACT_Y, SPAWN_Y } from '../core/battle';
 import type { BattleEvent, Enemy } from '../core/battle';
+import { tierSpeedFactor } from '../core/content';
 import { missionCredits } from '../core/economy';
 import { formatProblem } from '../core/facts';
 import { MINUS } from '../core/i18n';
@@ -19,6 +20,8 @@ import { Dashboard } from '../fx/Dashboard';
 import { EnemyShip } from '../fx/EnemyShip';
 import type { ThreatLevel } from '../fx/EnemyShip';
 import { ExplanationCard } from '../fx/ExplanationCard';
+import { InputHint } from '../fx/InputHint';
+import type { HintTarget } from '../fx/InputHint';
 import { Starfield } from '../fx/Starfield';
 import { Station } from '../fx/Station';
 import { Button } from '../ui/Button';
@@ -57,6 +60,8 @@ const END_BANNER_MS = 1500;
 const WAVE_BANNER_MS = 1100;
 /** The wrong-answer stab lands just after the loud part of the missed shot. */
 const WRONG_SOUND_DELAY_MS = 200;
+/** First-mission input hint retires after this many correct answers. */
+const HINT_CORRECT_TO_RETIRE = 2;
 
 function threatOf(y: number): ThreatLevel {
   if (y >= CRIT_Y) return 2;
@@ -76,6 +81,9 @@ export class BattleScene extends Phaser.Scene {
   private tagSides = new Map<number, TagSide>();
   private stations: Station[] = [];
   private dash!: Dashboard;
+  private hint: InputHint | null = null;
+  private hintCorrect = 0;
+  private keypadShown = false;
 
   private explainDim: Phaser.GameObjects.Rectangle | null = null;
   private explainCard: ExplanationCard | null = null;
@@ -101,6 +109,9 @@ export class BattleScene extends Phaser.Scene {
     this.pauseOverlay = null;
     this.paused = false;
     this.ending = false;
+    this.hint = null;
+    this.hintCorrect = 0;
+    this.keypadShown = false;
 
     const save = app.save;
     const now = app.now();
@@ -108,10 +119,12 @@ export class BattleScene extends Phaser.Scene {
       planetId: this.planetId,
       totalWaves: TOTAL_WAVES,
       stats: { ...save.stats },
+      planets: { ...save.planets },
       modules: { ...save.modules },
       now,
       seed: now % 0x7fffffff,
-      speedScale: save.settings.gameSpeed,
+      // Later systems of a sector are harder: their tier speeds the enemies up.
+      speedScale: save.settings.gameSpeed * tierSpeedFactor(this.planetId),
     });
 
     this.cameras.main.setBackgroundColor(COLORS.bg);
@@ -123,6 +136,8 @@ export class BattleScene extends Phaser.Scene {
     });
     this.buildPauseGlyph();
     this.buildKeypad();
+    // Onboarding for the very first mission only: shows what to type and that Enter fires.
+    if (save.totals.missions === 0) this.hint = new InputHint(this, this.keypadShown);
 
     // Plain DOM listener: Phaser's keyboard queue can re-emit earlier events within one frame.
     window.removeEventListener('keydown', this.onKeyDown);
@@ -144,6 +159,7 @@ export class BattleScene extends Phaser.Scene {
     for (const st of this.stations) st.update(dt);
     for (const ship of this.ships.values()) ship.tick(dt);
     this.renderState();
+    this.hint?.update(this.hintTarget(), this.sim.state.input, dt);
     app.sfx.setTension(this.tensionLevel());
   }
 
@@ -197,6 +213,7 @@ export class BattleScene extends Phaser.Scene {
   private buildKeypad(): void {
     const show = app.save.settings.keypadAlwaysVisible || this.sys.game.device.input.touch;
     if (!show) return;
+    this.keypadShown = true;
     new Keypad(this, {
       onDigit: (d) => { if (this.acceptsInput()) this.sim.typeDigit(d); },
       onSign: () => { if (this.acceptsInput()) this.sim.toggleSign(); },
@@ -279,7 +296,22 @@ export class BattleScene extends Phaser.Scene {
     return ship ? { x: ship.x, y: ship.y } : { x: e.x, y: shipScreenY(e.y) };
   }
 
+  /** The enemy a submit would hit first (lowest, ties to the lower id, as in core/battle), or null when hidden. */
+  private hintTarget(): HintTarget | null {
+    const s = this.sim.state;
+    if (this.paused || this.ending || s.phase !== 'spawning') return null;
+    let lowest: Enemy | undefined;
+    for (const e of s.enemies) if (!lowest || e.y > lowest.y || (e.y === lowest.y && e.id < lowest.id)) lowest = e;
+    const ship = lowest ? this.ships.get(lowest.id) : undefined;
+    if (!lowest || !ship) return null;
+    return { x: ship.x, y: ship.y, halfW: ship.shipHalfWidth, halfH: ship.shipHalfHeight, answer: lowest.fact.answer };
+  }
+
   private onKill(e: Enemy, byTurret: boolean, points: number): void {
+    if (!byTurret && this.hint?.active && ++this.hintCorrect >= HINT_CORRECT_TO_RETIRE) {
+      this.hint.fadeOut();
+      this.hint = null;
+    }
     const p = this.shipPoint(e);
     const size = this.ships.get(e.id)?.shipSize ?? shipSize(e.y);
     this.removeShip(e.id);
@@ -377,12 +409,12 @@ export class BattleScene extends Phaser.Scene {
     const credits = missionCredits({
       score: s.score, won, domesStanding: sim.domesStanding(), salvageTier: sim.upgradeEffects().salvageTier,
     });
-    const masteryBefore = planetMastery(this.planetId, app.save.stats);
+    const masteryBefore = planetMastery(this.planetId, app.save);
     app.save = applyMission(app.save, {
-      planetId: this.planetId, records: sim.records, credits, score: s.score, won, now: app.now(),
+      planetId: this.planetId, records: sim.records, credits, score: s.score, won, accuracy: sim.accuracy(), now: app.now(),
     });
     app.persist();
-    const masteryAfter = planetMastery(this.planetId, app.save.stats);
+    const masteryAfter = planetMastery(this.planetId, app.save);
     const results: ResultsSceneData = {
       planetId: this.planetId,
       won,
@@ -535,6 +567,8 @@ export class BattleScene extends Phaser.Scene {
     this.explainDim = null;
     this.explainCard = null;
     this.pauseOverlay = null;
+    this.hint?.destroy();
+    this.hint = null;
     if (this.scene.isActive('Upgrade') || this.scene.isPaused('Upgrade')) this.scene.stop('Upgrade');
   }
 }

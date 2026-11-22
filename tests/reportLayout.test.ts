@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CELL_MAX_W, CELL_MIN_W, cellWidth, flowRows, paginate, relativeDue } from '../src/ui/reportLayout';
+import { CELL_MAX_W, CELL_MIN_W, cellWidth, paginate, relativeDue } from '../src/ui/reportLayout';
 
 const MIN = 60_000;
 const HOUR = 3_600_000;
@@ -23,13 +23,6 @@ describe('report layout', () => {
     expect(cellWidth(1)).toBe(CELL_MIN_W);
     expect(cellWidth(6)).toBeGreaterThan(cellWidth(3));
     expect(cellWidth(40)).toBe(CELL_MAX_W);
-  });
-
-  it('flows groups into rows in order', () => {
-    expect(flowRows([100, 100, 100], 250, 10)).toEqual([[0, 1], [2]]);
-    expect(flowRows([100, 100, 100], 320, 10)).toEqual([[0, 1, 2]]);
-    expect(flowRows([400, 50], 300, 10)).toEqual([[0], [1]]);
-    expect(flowRows([], 300, 10)).toEqual([]);
   });
 
   it('pages never end on a header and keep every line once', () => {

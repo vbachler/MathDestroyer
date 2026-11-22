@@ -3,7 +3,7 @@ import { planetHold, underAttack } from '../core/galaxy';
 import { masteryBand, planetMastery } from '../core/mastery';
 import { stableHash } from '../core/names';
 import type { CallKind } from '../core/story';
-import type { FactStats, SystemDef } from '../core/types';
+import type { ProgressHolder, SystemDef } from '../core/types';
 import { capsStyle } from '../ui/TextStyles';
 import { drawRing } from '../ui/glyphs';
 import { drawCallBlip, drawStaticSigil, kindColor } from '../ui/mapGlyphs';
@@ -77,7 +77,7 @@ export class SystemView {
   }
 
   /** Builds the view for a system (replaces the previous one). */
-  show(system: SystemDef, stats: Record<string, FactStats>, now: number): void {
+  show(system: SystemDef, save: ProgressHolder, now: number): void {
     const scene = this.scene;
     this.root.removeAll(true);
     this.system = system;
@@ -124,16 +124,16 @@ export class SystemView {
     this.root.add(this.deco);
     for (const p of this.planets) this.root.add(p.label);
 
-    this.refresh(stats, now);
+    this.refresh(save, now);
     this.chooseLabelSides();
   }
 
   /** Re-reads mastery, hold and attack state of the planets. */
-  refresh(stats: Record<string, FactStats>, now: number): void {
+  refresh(save: ProgressHolder, now: number): void {
     for (const p of this.planets) {
-      p.mastery = planetMastery(p.id, stats);
-      p.hostile = planetHold(p.id, stats) === 'hostile';
-      p.attack = underAttack(p.id, stats, now);
+      p.mastery = planetMastery(p.id, save);
+      p.hostile = planetHold(p.id, save) === 'hostile';
+      p.attack = underAttack(p.id, save, now);
     }
   }
 

@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { PLANETS, SECTORS, SYSTEMS, planetsOfSector, sectorById } from '../src/core/content';
-import { factsForPlanet } from '../src/core/facts';
+import { SECTORS, SYSTEMS, sectorById } from '../src/core/content';
 import {
   MAX_SECTOR_OVERLAP, MIN_SYSTEM_SPACING, WORLD_H, WORLD_W, discOverlap, hueDistance, planetHold,
   sectorMastery, sectorRadius, systemMastery, underAttack,
 } from '../src/core/galaxy';
-import { placeSectors, scatterSystems } from '../src/core/layout';
-import type { FactStats } from '../src/core/types';
-import { NOW, stat, statsFor } from './helpers';
+import { hasNameBand, placeSectors, scatterSystems } from '../src/core/layout';
+import { DAY, NOW, planetIds, progress } from './helpers';
 
 describe('galaxy layout', () => {
   it('is deterministic', () => {
@@ -66,6 +64,11 @@ describe('galaxy layout', () => {
     }
   });
 
+  it('every sector keeps a band free for its name', () => {
+    for (const s of SECTORS) expect(hasNameBand(s, s.systems), s.id).toBe(true);
+    expect(hasNameBand({ x: 0, y: 0, radius: 300 }, [-0.6, -0.35, 0, 0.35, 0.6].map((k) => ({ x: 0, y: k * 300 })))).toBe(false);
+  });
+
   it('the core sits at the centre and the skills spiral around it', () => {
     const core = sectorById('core')!;
     expect([core.x, core.y]).toEqual([WORLD_W / 2, WORLD_H / 2]);
@@ -98,39 +101,37 @@ describe('galaxy layout', () => {
   });
 });
 
-describe('territory', () => {
-  const pid = planetsOfSector('add-5')[0].id;
-  const facts = factsForPlanet(pid);
+describe('territory (planet progress)', () => {
+  const [p1, p2, p3] = planetIds('add-5');
 
-  it('planetHold: < 0.2 hostile, < 0.6 contested, else secured', () => {
-    expect(planetHold(pid, {})).toBe('hostile');
-    expect(planetHold(pid, statsFor([pid], 1))).toBe('contested');      // 0.2
-    expect(planetHold(pid, statsFor([pid], 2))).toBe('contested');      // 0.4
-    expect(planetHold(pid, statsFor([pid], 3))).toBe('secured');        // 0.6
-    expect(planetHold(pid, statsFor([pid], 5))).toBe('secured');
+  it('planetHold: level 0 hostile, 1..2 contested, 3+ secured', () => {
+    const hold = (level: number) => planetHold(p1, { planets: { [p1]: progress(level) } });
+    expect(planetHold(p1, { planets: {} })).toBe('hostile');
+    expect([0, 1, 2, 3, 4, 5].map(hold)).toEqual(['hostile', 'contested', 'contested', 'secured', 'secured', 'secured']);
+    expect(planetHold('nope', { planets: {} })).toBe('hostile');
   });
 
-  it('underAttack: not hostile and at least 2 due facts', () => {
-    const stats: Record<string, FactStats> = statsFor([pid], 3);
-    expect(underAttack(pid, stats, NOW)).toBe(false);
-    stats[facts[0].id] = stat(3, { dueAt: NOW - 1 });
-    expect(underAttack(pid, stats, NOW)).toBe(false);
-    stats[facts[1].id] = stat(3, { dueAt: NOW });
-    expect(underAttack(pid, stats, NOW)).toBe(true);
-    const hostile = statsFor([pid], 0, { dueAt: NOW - 1 });
-    expect(underAttack(pid, hostile, NOW)).toBe(false);
+  it('underAttack: level >= 1 and now >= dueAt', () => {
+    const at = (level: number, dueAt: number) => underAttack(p1, { planets: { [p1]: progress(level, { dueAt }) } }, NOW);
+    expect(at(0, NOW - 1)).toBe(false);
+    expect(at(1, NOW + 1)).toBe(false);
+    expect(at(1, NOW)).toBe(true);
+    expect(at(5, NOW - DAY)).toBe(true);
+    expect(underAttack(p1, { planets: {} }, NOW)).toBe(false);
   });
 
-  it('systemMastery and sectorMastery are means over planets', () => {
-    const system = SYSTEMS.find((s) => s.sectorId === 'type-2')!;
-    const first = system.planets[0].id;
-    expect(systemMastery(system.id, {})).toBe(0);
-    expect(systemMastery(system.id, statsFor([first], 5))).toBeCloseTo(1 / system.planets.length);
-    expect(systemMastery('nope', {})).toBe(0);
-    const sectorPlanets = planetsOfSector('type-2').map((p) => p.id);
-    expect(sectorMastery('type-2', statsFor(sectorPlanets, 5))).toBe(1);
-    expect(sectorMastery('type-2', statsFor([first], 5))).toBeCloseTo(1 / sectorPlanets.length);
-    expect(sectorMastery('nope', {})).toBe(0);
-    expect(PLANETS.length).toBe(153);
+  it('systemMastery and sectorMastery are means of planet mastery over their planets', () => {
+    const system = sectorById('add-5')!.systems[0];
+    const n = system.planets.length;
+    const save = { planets: { [p1]: progress(5), [p2]: progress(2) } };
+    expect(system.planets.map((p) => p.id).slice(0, 2)).toEqual([p1, p2]);
+    expect(systemMastery(system.id, save)).toBeCloseTo((1 + 0.4) / n);
+    expect(systemMastery(system.id, { planets: {} })).toBe(0);
+    expect(systemMastery('nope', save)).toBe(0);
+    const all = planetIds('add-5');
+    expect(sectorMastery('add-5', save)).toBeCloseTo(1.4 / all.length);
+    expect(sectorMastery('add-5', { planets: Object.fromEntries(all.map((id) => [id, progress(5)])) })).toBe(1);
+    expect(sectorMastery('nope', save)).toBe(0);
+    expect(p3).toBeDefined();
   });
 });

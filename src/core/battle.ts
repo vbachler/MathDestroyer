@@ -3,8 +3,9 @@ import { classify, fastThresholdMs, isMastered } from './mastery';
 import type { Outcome } from './mastery';
 import { createRng } from './rng';
 import type { Rng } from './rng';
-import { buildWaveQueue } from './scheduler';
-import type { Fact, FactStats } from './types';
+import { createMissionScheduler } from './scheduler';
+import type { MissionScheduler } from './scheduler';
+import type { Fact, FactStats, PlanetProgress } from './types';
 import { headStartUpgrades, offerFor, pickOfferIds, upgradeById, upgradeEffects } from './upgrades';
 import type { UpgradeEffects, UpgradeOffer } from './upgrades';
 
@@ -58,7 +59,7 @@ export interface BattleState {
   kills: number;
   wrongAnswers: number;
   ownedUpgrades: Record<string, number>;   // upgradeId -> tier
-  missed: Fact[];           // facts that reached the planet (unique, in order)
+  missed: Fact[];           // problems that reached the planet (unique by id, in order)
   explaining: Fact | null;  // set while phase === 'explaining'
   autoTurretCooldownMs: number;
   /** Impacts the shield upgrade can still absorb in the current wave (refilled at each wave start). */
@@ -78,17 +79,20 @@ export type BattleEvent =
   | { type: 'explainEnd' }
   | { type: 'won' } | { type: 'lost' };
 
-/** One recorded answer, applied to mastery by the caller after the mission. */
+/** One recorded answer, applied to mastery by the caller after the mission. `factId` holds the
+ *  problem's `statId` (the fact id when enumerated, `cat:<sectorId>:<category>` when generated). */
 export interface AnswerRecord { factId: string; outcome: Outcome; responseMs: number; }
 
 export interface BattleConfig {
   planetId: string;
   totalWaves: number;                         // campaign missions: MISSION_WAVES (3)
   stats: Record<string, FactStats>;           // read-only snapshot at mission start
+  planets: Record<string, PlanetProgress>;    // read-only snapshot (the core draws from played sectors)
   modules: Record<string, number>;            // station modules owned: moduleId -> tier
   now: number;                                // epoch ms at mission start
   seed: number;
-  speedScale: number;                         // 0.75 | 1 | 1.25 from settings.gameSpeed
+  /** settings.gameSpeed (0.75 | 1 | 1.25) times the planet's tier factor (tierSpeedFactor). */
+  speedScale: number;
 }
 
 /** "Lowest" enemy = closest to the planet = greatest y (ties: oldest id). */
@@ -107,8 +111,11 @@ export class BattleSim {
   private readonly targetingMult: number;
   private readonly speedScale: number;
   private effects: UpgradeEffects;
+  private readonly scheduler: MissionScheduler;
   private queue: Fact[] = [];
   private queueIndex = 0;
+  /** Id of the problem spawned last (never spawned twice in a row). */
+  private lastSpawnedId: string | null = null;
   private spawnTimerMs = WAVE_START_DELAY_MS;
   private nextEnemyId = 1;
   private explainRemainingMs = 0;
@@ -145,6 +152,9 @@ export class BattleSim {
     };
     this.effects = upgradeEffects(this.state.ownedUpgrades);
     if (this.effects.turretCooldownMs !== null) this.state.autoTurretCooldownMs = this.effects.turretCooldownMs;
+    this.scheduler = createMissionScheduler({
+      planetId: cfg.planetId, stats: cfg.stats, planets: cfg.planets, now: cfg.now, rng: this.rng,
+    });
     this.startWaveQueue();
   }
 
@@ -212,7 +222,7 @@ export class BattleSim {
     const s = this.state;
     s.autoTurretCooldownMs = Math.max(0, s.autoTurretCooldownMs - dt);
     if (s.autoTurretCooldownMs > 0) return;
-    const target = lowest(s.enemies.filter((e) => isMastered(this.config.stats[e.fact.id])));
+    const target = lowest(s.enemies.filter((e) => isMastered(this.config.stats[e.fact.statId])));
     if (!target) return;   // stays ready until a mastered fact appears
     this.removeEnemy(target);
     s.score += TURRET_POINTS;
@@ -230,11 +240,13 @@ export class BattleSim {
     const free = LANE_X.map((_, i) => i)
       .filter((lane) => !s.enemies.some((e) => e.lane === lane && e.y <= LANE_CLEAR_Y));
     if (free.length === 0) return;
+    const fact = this.nextFact();
+    if (!fact) return;   // every candidate is on screen already: wait for one to go
     const lane = this.rng.pick(free);
     const factor = 0.9 + 0.2 * this.rng.next();
     const enemy: Enemy = {
       id: this.nextEnemyId++,
-      fact: this.queue[this.queueIndex++],
+      fact,
       lane,
       x: LANE_X[lane],
       y: SPAWN_Y,
@@ -244,6 +256,31 @@ export class BattleSim {
     s.enemies.push(enemy);
     this.spawnTimerMs = spawnIntervalMs(s.wave, this.speedScale);
     ev.push({ type: 'spawn', enemy });
+  }
+
+  /**
+   * The next problem to spawn: the queued one unless the same problem is alive or was spawned
+   * last; then the first later queued problem that fits is moved forward, else the scheduler
+   * draws a replacement. Null (spawn waits) when nothing fits. Advances the queue.
+   */
+  private nextFact(): Fact | null {
+    const alive = new Set(this.state.enemies.map((e) => e.fact.id));
+    const strict = new Set(alive);
+    if (this.lastSpawnedId) strict.add(this.lastSpawnedId);
+    const q = this.queue;
+    let j = this.queueIndex;
+    while (j < q.length && strict.has(q[j].id)) j++;
+    if (j < q.length) {
+      [q[this.queueIndex], q[j]] = [q[j], q[this.queueIndex]];
+    } else {
+      const wave = this.state.wave - 1;
+      const replacement = this.scheduler.replacement(wave, strict) ?? this.scheduler.replacement(wave, alive);
+      if (!replacement) return null;
+      q[this.queueIndex] = replacement;
+    }
+    const fact = q[this.queueIndex++];
+    this.lastSpawnedId = fact.id;
+    return fact;
   }
 
   private stepImpacts(ev: BattleEvent[]): void {
@@ -256,7 +293,7 @@ export class BattleSim {
       enemy.y = IMPACT_Y;
       const domeIndex = this.domeToHit(enemy.x);
       this.wronged.delete(enemy.id);
-      this.records.push({ factId: enemy.fact.id, outcome: 'missed', responseMs: s.timeMs - enemy.spawnedAt });
+      this.records.push({ factId: enemy.fact.statId, outcome: 'missed', responseMs: s.timeMs - enemy.spawnedAt });
       if (!s.missed.some((f) => f.id === enemy.fact.id)) s.missed.push(enemy.fact);
       if (first === null) first = enemy.fact;
       if (s.shieldCharges > 0) {
@@ -321,14 +358,7 @@ export class BattleSim {
 
   private startWaveQueue(): void {
     const s = this.state;
-    this.queue = buildWaveQueue({
-      planetId: this.config.planetId,
-      count: enemiesInWave(s.wave),
-      stats: this.config.stats,
-      now: this.config.now,
-      rng: this.rng,
-      waveIndex: s.wave - 1,
-    });
+    this.queue = this.scheduler.wave(s.wave - 1, enemiesInWave(s.wave));
     this.queueIndex = 0;
     this.spawnTimerMs = WAVE_START_DELAY_MS;
     s.shieldCharges = this.effects.shieldPerWave;
@@ -380,7 +410,7 @@ export class BattleSim {
       s.bestStreak = Math.max(s.bestStreak, s.streak);
       s.kills++;
       this.correctAnswers++;
-      this.records.push({ factId: target.fact.id, outcome, responseMs });
+      this.records.push({ factId: target.fact.statId, outcome, responseMs });
       ev.push({ type: 'kill', enemy: target, fast, byTurret: false, points });
       if (s.streak % REPAIR_STREAK === 0) {
         const domeIndex = this.repairMostDamaged();
@@ -399,7 +429,7 @@ export class BattleSim {
     if (victim && !this.wronged.has(victim.id)) {
       this.wronged.add(victim.id);
       this.records.push({
-        factId: victim.fact.id,
+        factId: victim.fact.statId,
         outcome: 'wrong',
         responseMs: s.timeMs - Math.max(victim.spawnedAt, this.lastSubmitAt),
       });

@@ -1,10 +1,11 @@
 import { planetsOfSector, systemById } from './content';
-import { dueFacts, planetMastery } from './mastery';
-import type { FactStats } from './types';
+import { MAX_PLANET_LEVEL, planetMastery, planetProgress } from './mastery';
+import type { PlanetDef, ProgressHolder } from './types';
 
 /**
  * Galaxy map v3: layout (computed in `layout.ts`, baked into SECTORS / SYSTEMS / PLANETS by
- * `content.ts`) and territory. Pure and deterministic.
+ * `content.ts`) and territory from planet progress (ARCHITECTURE.md "Random problems v4").
+ * Pure and deterministic.
  */
 export {
   MAX_SECTOR_OVERLAP, MIN_SYSTEM_SPACING, SKILL_HUE, WORLD_H, WORLD_MARGIN, WORLD_W,
@@ -13,39 +14,35 @@ export {
 
 export type Hold = 'hostile' | 'contested' | 'secured';
 
-export const HOSTILE_BELOW = 0.2;
-export const CONTESTED_BELOW = 0.6;
-export const ATTACK_MIN_DUE = 2;
+/** Lowest planet level that counts as secured (levels 1..2 are contested, 0 hostile). */
+export const SECURED_LEVEL = 3;
 
-/** Threshold comparison tolerant to floating-point rounding of means. */
-const below = (x: number, threshold: number): boolean => x < threshold - 1e-9;
-
-/** planetMastery < 0.2 hostile (held by the Static), < 0.6 contested, else secured. */
-export function planetHold(planetId: string, stats: Record<string, FactStats>): Hold {
-  const m = planetMastery(planetId, stats);
-  if (below(m, HOSTILE_BELOW)) return 'hostile';
-  if (below(m, CONTESTED_BELOW)) return 'contested';
-  return 'secured';
+/** Level 0 hostile (held by the Static), 1..2 contested, 3+ secured. */
+export function planetHold(planetId: string, save: ProgressHolder): Hold {
+  const { level } = planetProgress(save, planetId);
+  if (level === 0) return 'hostile';
+  return level < SECURED_LEVEL ? 'contested' : 'secured';
 }
 
-/** A planet is under attack when it is not hostile and has >= 2 due facts. */
-export function underAttack(planetId: string, stats: Record<string, FactStats>, now: number): boolean {
-  return planetHold(planetId, stats) !== 'hostile' && dueFacts(planetId, stats, now).length >= ATTACK_MIN_DUE;
+/** A planet is under attack when its level is >= 1 and it is due (now >= dueAt). */
+export function underAttack(planetId: string, save: ProgressHolder, now: number): boolean {
+  const p = planetProgress(save, planetId);
+  return p.level >= 1 && now >= p.dueAt;
 }
 
-function meanMastery(planetIds: string[], stats: Record<string, FactStats>): number {
-  if (planetIds.length === 0) return 0;
-  let sum = 0;
-  for (const id of planetIds) sum += planetMastery(id, stats);
-  return sum / planetIds.length;
+function meanMastery(planets: readonly PlanetDef[], save: ProgressHolder): number {
+  if (planets.length === 0) return 0;
+  let levels = 0;
+  for (const p of planets) levels += planetMastery(p.id, save) * MAX_PLANET_LEVEL;
+  return levels / (MAX_PLANET_LEVEL * planets.length);
 }
 
-/** Mean planetMastery of the system's planets (0 for an unknown id). */
-export function systemMastery(systemId: string, stats: Record<string, FactStats>): number {
-  return meanMastery(systemById(systemId)?.planets.map((p) => p.id) ?? [], stats);
+/** Mean planet mastery over the system's planets (0 for an unknown id). */
+export function systemMastery(systemId: string, save: ProgressHolder): number {
+  return meanMastery(systemById(systemId)?.planets ?? [], save);
 }
 
-/** Mean planetMastery of every planet in the sector, each planet weighing the same (0 for an unknown id). */
-export function sectorMastery(sectorId: string, stats: Record<string, FactStats>): number {
-  return meanMastery(planetsOfSector(sectorId).map((p) => p.id), stats);
+/** Mean planet mastery over the sector's planets (0 for an unknown id). */
+export function sectorMastery(sectorId: string, save: ProgressHolder): number {
+  return meanMastery(planetsOfSector(sectorId), save);
 }

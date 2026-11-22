@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { SECTORS, SYSTEMS } from '../core/content';
 import { planetHold, sectorMastery, underAttack } from '../core/galaxy';
-import type { FactStats } from '../core/types';
+import type { ProgressHolder } from '../core/types';
 import { capsStyle } from '../ui/TextStyles';
 import { cssColor, sectorColors, sunColors } from '../ui/mapPalette';
 import { drawChevron } from '../ui/mapGlyphs';
@@ -179,13 +179,13 @@ export class GalaxyView {
   }
 
   /** Territory: rings for hostile and attacked systems, cloud brightness from sector mastery. */
-  refreshTerritory(stats: Record<string, FactStats>, now: number): void {
+  refreshTerritory(save: ProgressHolder, now: number): void {
     SYSTEMS.forEach((s, i) => {
-      this.hostile[i] = s.planets.some((p) => planetHold(p.id, stats) === 'hostile') ? 1 : 0;
-      this.attack[i] = s.planets.some((p) => underAttack(p.id, stats, now)) ? 1 : 0;
+      this.hostile[i] = s.planets.some((p) => planetHold(p.id, save) === 'hostile') ? 1 : 0;
+      this.attack[i] = s.planets.some((p) => underAttack(p.id, save, now)) ? 1 : 0;
     });
     SECTORS.forEach((sector, i) => {
-      const m = sectorMastery(sector.id, stats);
+      const m = sectorMastery(sector.id, save);
       this.clouds[i].img.setAlpha(0.42 + 0.58 * m);
       this.lBase[i] = SECTOR_LABEL_ALPHA + 0.35 * m;
     });

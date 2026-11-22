@@ -1,6 +1,6 @@
 import { planetById, planetsOfSector, sectorById } from './content';
 import { planetHold, underAttack } from './galaxy';
-import { dueFacts, planetMastery } from './mastery';
+import { planetMastery, planetProgress } from './mastery';
 import { stableHash } from './names';
 import type { SaveData } from './save';
 import type { SkillId } from './types';
@@ -51,13 +51,13 @@ function makeCall(planetId: string, kind: CallKind, save: SaveData, intro: boole
 
 /** defend when under attack, liberate when hostile, else patrol. */
 function kindOf(planetId: string, save: SaveData, now: number): CallKind {
-  if (underAttack(planetId, save.stats, now)) return 'defend';
-  return planetHold(planetId, save.stats) === 'hostile' ? 'liberate' : 'patrol';
+  if (underAttack(planetId, save, now)) return 'defend';
+  return planetHold(planetId, save) === 'hostile' ? 'liberate' : 'patrol';
 }
 
 /**
- * Up to `max` calls for the sector the player is in: every planet under attack (defend, most
- * due facts first), then the next hostile planet in sector order (liberate), then the weakest
+ * Up to `max` calls for the sector the player is in: every planet under attack (defend, the
+ * longest overdue first, i.e. earliest dueAt), then the next hostile planet in sector order (liberate), then the weakest
  * non-hostile planet not called yet (patrol). Ties keep sector order. While the sector's skill
  * is not in `save.story.seen`, the first call carries that skill's intro
  * (`story.system.<skill>.text`, its own sender) instead of its usual line.
@@ -65,22 +65,21 @@ function kindOf(planetId: string, save: SaveData, now: number): CallKind {
  */
 export function sectorCalls(sectorId: string, save: SaveData, now: number, max: number): Call[] {
   const planets = planetsOfSector(sectorId).map((p, order) => ({ id: p.id, order }));
-  const stats = save.stats;
   const picked: Array<{ id: string; kind: CallKind }> = [];
 
   planets
-    .filter((p) => underAttack(p.id, stats, now))
-    .map((p) => ({ ...p, due: dueFacts(p.id, stats, now).length }))
-    .sort((a, b) => b.due - a.due || a.order - b.order)
+    .filter((p) => underAttack(p.id, save, now))
+    .map((p) => ({ ...p, dueAt: planetProgress(save, p.id).dueAt }))
+    .sort((a, b) => a.dueAt - b.dueAt || a.order - b.order)
     .forEach((p) => picked.push({ id: p.id, kind: 'defend' }));
 
   const taken = (id: string): boolean => picked.some((c) => c.id === id);
-  const hostile = planets.find((p) => !taken(p.id) && planetHold(p.id, stats) === 'hostile');
+  const hostile = planets.find((p) => !taken(p.id) && planetHold(p.id, save) === 'hostile');
   if (hostile) picked.push({ id: hostile.id, kind: 'liberate' });
 
   const patrol = planets
-    .filter((p) => !taken(p.id) && planetHold(p.id, stats) !== 'hostile')
-    .map((p) => ({ ...p, m: planetMastery(p.id, stats) }))
+    .filter((p) => !taken(p.id) && planetHold(p.id, save) !== 'hostile')
+    .map((p) => ({ ...p, m: planetMastery(p.id, save) }))
     .sort((a, b) => a.m - b.m || a.order - b.order)[0];
   if (patrol) picked.push({ id: patrol.id, kind: 'patrol' });
 

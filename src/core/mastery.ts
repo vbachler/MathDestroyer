@@ -1,8 +1,8 @@
-import { CORE_PLANET_ID, sectorsOfSkill } from './content';
-import { allFacts, factsForPlanet } from './facts';
-import type { Fact, FactStats, SkillId } from './types';
+import { SECTORS } from './content';
+import { sectorStatIds } from './facts';
+import type { Fact, FactStats, PlanetProgress, ProgressHolder } from './types';
 
-export const BOX_INTERVAL_MS = [0, 2 * 60e3,24 * 3600e3, 3 * 24 * 3600e3, 7 * 24 * 3600e3, 21 * 24 * 3600e3];
+export const BOX_INTERVAL_MS = [0, 2 * 60e3, 24 * 3600e3, 3 * 24 * 3600e3, 7 * 24 * 3600e3, 21 * 24 * 3600e3];
 export const MASTERED_BOX = 4;
 export const MAX_BOX = 5;
 
@@ -78,37 +78,70 @@ export function factLevel(s: FactStats | undefined): number {
   return s ? s.box / MAX_BOX : 0;
 }
 
-function meanLevel(facts: Fact[], stats: Record<string, FactStats>): number {
-  if (facts.length === 0) return 0;
+/** Mean knowledge level (box / 5) of the given stat ids; 0 for an empty list. */
+export function knowledge(statIds: readonly string[], stats: Record<string, FactStats>): number {
+  if (statIds.length === 0) return 0;
   let boxes = 0;
-  for (const f of facts) boxes += stats[f.id]?.box ?? 0;
-  return boxes / (MAX_BOX * facts.length);   // exact for whole-box fractions
+  for (const id of statIds) boxes += stats[id]?.box ?? 0;
+  return boxes / (MAX_BOX * statIds.length);   // exact for whole-box fractions
+}
+
+/** Real knowledge of a sector from `stats` (per fact or per category), for the parent report. */
+export function sectorKnowledge(sectorId: string, stats: Record<string, FactStats>): number {
+  return knowledge(sectorStatIds(sectorId), stats);
+}
+
+/** Real knowledge over every sector's stat ids (the core's line in the parent report). */
+export function galaxyKnowledge(stats: Record<string, FactStats>): number {
+  return knowledge(SECTORS.flatMap((s) => sectorStatIds(s.id)), stats);
+}
+
+// ---------------------------------------------------------------- planet progress
+
+const MINUTE = 60e3;
+const DAY = 24 * 3600e3;
+/** Time until a planet is due again, by its new level. */
+export const PLANET_INTERVAL_MS = [0, 20 * MINUTE, DAY, 3 * DAY, 7 * DAY, 21 * DAY];
+export const MAX_PLANET_LEVEL = 5;
+/** A won mission raises the planet's level only with at least this accuracy. */
+export const LEVEL_UP_ACCURACY = 0.8;
+
+export function emptyProgress(): PlanetProgress {
+  return { level: 0, dueAt: 0, wins: 0 };
+}
+
+/** Progress of a planet (level 0, never visited, when missing). */
+export function planetProgress(save: ProgressHolder, planetId: string): PlanetProgress {
+  return save.planets[planetId] ?? emptyProgress();
+}
+
+/** A planet is due when it is at level 0 or now >= dueAt. */
+export function isPlanetDue(p: PlanetProgress, now: number): boolean {
+  return p.level === 0 || now >= p.dueAt;
 }
 
 /**
- * Mean factLevel of the planet's facts. The core planet has no facts of its own; its mastery is
- * the mean over every fact of the galaxy.
+ * Result of one mission at a planet:
+ * won with accuracy >= 0.8 at level 0: level 2, dueAt = now + PLANET_INTERVAL_MS[1] (20 min), so a
+ * second good win in the same session secures it (level 3; "Review fixes v5");
+ * won with accuracy >= 0.8 and due at level >= 1: level + 1 (max 5), dueAt = now + PLANET_INTERVAL_MS[new level];
+ * won otherwise: only `wins` changes; lost: level − 1 (min 0) and due now. Pure.
  */
-export function planetMastery(planetId: string, stats: Record<string, FactStats>): number {
-  if (planetId === CORE_PLANET_ID) return meanLevel(allFacts(), stats);
-  return meanLevel(factsForPlanet(planetId), stats);
+export function applyPlanetResult(p: PlanetProgress, r: { won: boolean; accuracy: number; now: number }): PlanetProgress {
+  if (!r.won) return { level: Math.max(0, p.level - 1), dueAt: r.now, wins: p.wins };
+  if (r.accuracy >= LEVEL_UP_ACCURACY && p.level === 0) {
+    return { level: 2, dueAt: r.now + PLANET_INTERVAL_MS[1], wins: p.wins + 1 };
+  }
+  if (r.accuracy >= LEVEL_UP_ACCURACY && isPlanetDue(p, r.now)) {
+    const level = Math.min(MAX_PLANET_LEVEL, p.level + 1);
+    return { level, dueAt: r.now + PLANET_INTERVAL_MS[level], wins: p.wins + 1 };
+  }
+  return { ...p, wins: p.wins + 1 };
 }
 
-/** Mean planetMastery over every planet of the skill's sectors (each planet weighs the same). */
-export function skillMastery(skill: SkillId, stats: Record<string, FactStats>): number {
-  const planets = sectorsOfSkill(skill).flatMap((s) => s.systems.flatMap((y) => y.planets));
-  if (planets.length === 0) return 0;
-  let sum = 0;
-  for (const p of planets) sum += planetMastery(p.id, stats);
-  return sum / planets.length;
-}
-
-/** Facts of the planet seen before (attempts>0) whose dueAt <= now. */
-export function dueFacts(planetId: string, stats: Record<string, FactStats>, now: number): Fact[] {
-  return factsForPlanet(planetId).filter((f) => {
-    const s = stats[f.id];
-    return s !== undefined && s.attempts > 0 && s.dueAt <= now;
-  });
+/** Planet mastery = level / 5 (0 for a never-visited or unknown planet). */
+export function planetMastery(planetId: string, save: ProgressHolder): number {
+  return planetProgress(save, planetId).level / MAX_PLANET_LEVEL;
 }
 
 /** Mastery -> colour band: 0 'unlit' (<0.10), 1 'weak' (<0.35), 2 'learning' (<0.6),

@@ -1,6 +1,6 @@
 /**
  * Pure layout helpers of the parent report (Mastery scene): relative review time, cell width
- * from the longest problem, flowing planet groups into rows, and paging.
+ * from the longest problem, and paging.
  */
 
 export type DueUnit = 'now' | 'minutes' | 'hours' | 'days';
@@ -26,30 +26,6 @@ export const CELL_MAX_W = 96;
 /** Cell width that fits the longest problem text of a skill (in characters) plus the box number. */
 export function cellWidth(maxChars: number): number {
   return Math.min(CELL_MAX_W, Math.max(CELL_MIN_W, Math.ceil(maxChars * CELL_CHAR_W + CELL_EXTRA)));
-}
-
-/**
- * Flows groups of the given widths into rows no wider than `rowWidth`, keeping their order,
- * with `gap` between groups. A group wider than the row gets a row of its own.
- * Returns the group indices of each row.
- */
-export function flowRows(widths: readonly number[], rowWidth: number, gap: number): number[][] {
-  const rows: number[][] = [];
-  let row: number[] = [];
-  let used = 0;
-  widths.forEach((w, i) => {
-    const need = row.length === 0 ? w : used + gap + w;
-    if (row.length > 0 && need > rowWidth) {
-      rows.push(row);
-      row = [i];
-      used = w;
-    } else {
-      row.push(i);
-      used = need;
-    }
-  });
-  if (row.length > 0) rows.push(row);
-  return rows;
 }
 
 /**

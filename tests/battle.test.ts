@@ -4,18 +4,21 @@ import {
   baseSpeed, enemiesInWave, spawnIntervalMs,
 } from '../src/core/battle';
 import type { BattleConfig, BattleEvent, Enemy } from '../src/core/battle';
-import { allFacts, factById, factsForPlanet } from '../src/core/facts';
+import { CORE_PLANET_ID } from '../src/core/content';
+import { makeFact } from '../src/core/factgen';
+import { factById, sectorFacts } from '../src/core/facts';
 import { isMastered } from '../src/core/mastery';
 import type { FactStats } from '../src/core/types';
-import { NOW, stat } from './helpers';
+import { NOW, planetIds, stat } from './helpers';
 
-/** Digits 5..9 (the second planet of the type-1 sector). */
-const DIGITS = 'type-1.2';
+/** A planet of the digits sector (type-1: every mission draws from 0..9). */
+const DIGITS = planetIds('type-1')[1];
 
 const cfg = (over: Partial<BattleConfig> = {}): BattleConfig => ({
   planetId: DIGITS,
   totalWaves: MISSION_WAVES,
   stats: {},
+  planets: {},
   modules: {},
   now: NOW,
   seed: 1,
@@ -139,7 +142,7 @@ describe('BattleSim setup', () => {
   });
 
   it('spawns 6 + 2w enemies per wave, never more than 4 alive, lanes not overlapping', () => {
-    const sim = new BattleSim(cfg({ stats: Object.fromEntries(factsForPlanet(DIGITS).map((f) => [f.id, stat(2)])) }));
+    const sim = new BattleSim(cfg({ stats: Object.fromEntries(sectorFacts('type-1').map((f) => [f.id, stat(2)])) }));
     let spawns = 0;
     let maxAlive = 0;
     for (let i = 0; i < 10000 && sim.state.phase !== 'waveCleared'; i++) {
@@ -278,12 +281,12 @@ describe('BattleSim answers', () => {
     expect(sim.records.map((r) => r.outcome)).toEqual(['wrong', 'slow']);
   });
 
-  it('FR-03: destroys the matching enemy with the greatest y', () => {
+  it('FR-03: of the enemies with an equal answer, destroys the one with the greatest y', () => {
     const sim = new BattleSim(cfg());
     firstSpawn(sim);
     runUntil(sim, () => sim.state.enemies.length === 2);
     const [older, newer] = sim.state.enemies;
-    newer.fact = older.fact;
+    newer.fact = makeFact('add', 0, older.fact.answer);   // a different problem with the same answer
     expect(older.y).toBeGreaterThan(newer.y);
     let ev = answer(sim, older.fact.answer);
     expect(ev[0]).toMatchObject({ type: 'kill', enemy: { id: older.id } });
@@ -292,7 +295,7 @@ describe('BattleSim answers', () => {
     firstSpawn(sim2);
     runUntil(sim2, () => sim2.state.enemies.length === 2);
     const [a, b] = sim2.state.enemies;
-    b.fact = a.fact;
+    b.fact = makeFact('add', 0, a.fact.answer);
     b.y = a.y + 50;
     ev = answer(sim2, a.fact.answer);
     expect(ev[0]).toMatchObject({ type: 'kill', enemy: { id: b.id } });
@@ -329,7 +332,7 @@ describe('BattleSim input', () => {
     sim.typeDigit(5);
     sim.toggleSign();
     expect(sim.state.input).toBe('5');
-    const neg = allFacts().find((f) => f.planetId.startsWith('neg-10') && f.answer < 0)!;
+    const neg = makeFact('sub', 3, 7);   // 3 − 7 = −4
     e.fact = neg;
     sim.state.enemies[0].fact = neg;
     sim.toggleSign();
@@ -529,7 +532,7 @@ describe('BattleSim waves and upgrades', () => {
 
   it('auto-turret fires only on mastered facts and its kills are not recorded', () => {
     const stats: Record<string, FactStats> = {};
-    factsForPlanet(DIGITS).forEach((f) => { stats[f.id] = f.a < 8 ? stat(4) : stat(1); });
+    sectorFacts('type-1').forEach((f) => { stats[f.id] = f.a < 8 ? stat(4) : stat(1); });
     const sim = simOffering('autoTurret', { stats });
     sim.pickUpgrade('autoTurret');
     expect(sim.state.autoTurretCooldownMs).toBe(7000);
@@ -558,10 +561,10 @@ describe('BattleSim waves and upgrades', () => {
 });
 
 describe('BattleSim determinism', () => {
-  function script(seed: number): string {
+  function script(seed: number, planetId = planetIds('mul-c')[0]): string {
     const stats: Record<string, FactStats> = {};
-    factsForPlanet('mul-c.3').forEach((f, i) => { stats[f.id] = stat(i % 6, { dueAt: i % 2 ? NOW - 1 : NOW + 1 }); });
-    const sim = new BattleSim(cfg({ planetId: 'mul-c.3', stats, seed, modules: { headStart: 2 } }));
+    sectorFacts('mul-c').forEach((f, i) => { stats[f.id] = stat(i % 6, { dueAt: i % 2 ? NOW - 1 : NOW + 1 }); });
+    const sim = new BattleSim(cfg({ planetId, stats, seed, modules: { headStart: 2 } }));
     const log: BattleEvent[] = [];
     for (let tick = 0; tick < 6000; tick++) {
       const p = sim.state.phase;
@@ -584,15 +587,100 @@ describe('BattleSim determinism', () => {
   }
 
   it('same config and calls give identical state, records and events', () => {
-    const a = script(123);
-    expect(script(123)).toBe(a);
-    expect(script(124)).not.toBe(a);
-    expect(JSON.parse(a).state.phase).toMatch(/won|lost/);
+    for (const planetId of [planetIds('mul-c')[0], planetIds('add-100')[3], CORE_PLANET_ID]) {
+      const a = script(123, planetId);
+      expect(script(123, planetId)).toBe(a);
+      expect(script(124, planetId)).not.toBe(a);
+      expect(JSON.parse(a).state.phase).toMatch(/won|lost/);
+    }
   });
 
   it('factById resolves every fact the sim can produce', () => {
     const sim = new BattleSim(cfg());
     const e = firstSpawn(sim);
     expect(factById(e.fact.id)).toEqual(e.fact);
+  });
+});
+
+describe('BattleSim random problems (v4)', () => {
+  /**
+   * Plays a whole mission slowly (answers only when 4 enemies are alive, so enemies stay on
+   * screen together) and checks every spawn: the new problem is not alive already and differs
+   * from the previous spawn. Returns the spawned problem ids.
+   */
+  function playChecked(planetId: string, seed: number, stats: Record<string, FactStats> = {}): string[] {
+    const sim = new BattleSim(cfg({ planetId, seed, stats, modules: { hull: 3 } }));
+    const spawned: string[] = [];
+    for (let tick = 0; tick < 40000; tick++) {
+      const p = sim.state.phase;
+      if (p === 'won' || p === 'lost') break;
+      if (p === 'waveCleared') {
+        const offers = sim.offers();
+        if (offers.length > 0) sim.pickUpgrade(offers[0].def.id);
+        else sim.nextWave();
+        continue;
+      }
+      for (const e of sim.update(40)) {
+        if (e.type !== 'spawn') continue;
+        const ids = sim.state.enemies.map((x) => x.fact.id);
+        expect(new Set(ids).size, `${planetId} seed ${seed}: ${ids.join(' ')}`).toBe(ids.length);
+        if (spawned.length > 0) expect(e.enemy.fact.id).not.toBe(spawned[spawned.length - 1]);
+        spawned.push(e.enemy.fact.id);
+      }
+      if (sim.state.phase === 'spawning' && sim.state.enemies.length >= MAX_ALIVE) answer(sim, lowestEnemy(sim).fact.answer);
+    }
+    return spawned;
+  }
+
+  it('never has two identical problems alive, nor the same problem twice in a row (long missions)', () => {
+    const played = { 'mul:7x8': stat(2), 'cat:add-100:carry': stat(1), 'sub:9-4': stat(3) };
+    const cases: Array<[string, Record<string, FactStats>]> = [
+      [planetIds('type-1')[0], {}], [planetIds('sub-5')[2], {}], [planetIds('add-100')[1], {}],
+      [planetIds('miss-sub')[0], {}], [CORE_PLANET_ID, played], [CORE_PLANET_ID, {}],
+    ];
+    for (const [planetId, stats] of cases) {
+      for (let seed = 1; seed <= 4; seed++) {
+        const spawned = playChecked(planetId, seed, stats);
+        expect(spawned.length, planetId).toBeGreaterThanOrEqual(8);
+      }
+    }
+  });
+
+  it('a mission differs between seeds and every planet of a sector draws from the whole sector', () => {
+    const a = playChecked(planetIds('add-100')[0], 1);
+    const b = playChecked(planetIds('add-100')[0], 2);
+    expect(a).not.toEqual(b);
+    expect(new Set(a).size).toBeGreaterThan(a.length * 0.8);
+    const pool = new Set(sectorFacts('mul-c').map((f) => f.id));
+    for (const pid of planetIds('mul-c')) {
+      const ids = playChecked(pid, 5, Object.fromEntries(sectorFacts('mul-c').map((f) => [f.id, stat(2)])));
+      expect(ids.every((id) => pool.has(id))).toBe(true);
+    }
+  });
+
+  it('records generated problems by category statId; missed and the explanation keep the actual problem', () => {
+    const sim = new BattleSim(cfg({ planetId: planetIds('add-100')[0] }));
+    const e = firstSpawn(sim);
+    expect(e.fact.statId).toMatch(/^cat:add-100:(carry|nocarry|easy)$/);
+    answer(sim, e.fact.answer);
+    expect(sim.records[0]).toMatchObject({ factId: e.fact.statId, outcome: 'fast' });
+    const ev = runUntil(sim, (x) => x.some((y) => y.type === 'impact'), 120_000, 50);
+    const impact = ev.find((x) => x.type === 'impact')!;
+    if (impact.type !== 'impact') throw new Error();
+    expect(sim.state.missed[0].id).toMatch(/^add:\d+\+\d+$/);
+    expect(sim.state.missed[0]).toEqual(impact.enemy.fact);
+    expect(sim.state.explaining).toEqual(impact.enemy.fact);
+    expect(sim.records.at(-1)).toEqual({ factId: impact.enemy.fact.statId, outcome: 'missed', responseMs: expect.any(Number) });
+  });
+
+  it('the auto-turret uses the statId: it fires on problems of a mastered category only', () => {
+    const stats = { 'cat:miss-add:left': stat(4), 'cat:miss-add:right': stat(1) };
+    const sim = simOffering('autoTurret', { planetId: planetIds('miss-add')[0], stats });
+    sim.pickUpgrade('autoTurret');
+    const events: BattleEvent[] = [];
+    for (let i = 0; i < 20000 && (sim.state.phase === 'spawning' || sim.state.phase === 'explaining'); i++) events.push(...sim.update(50));
+    const kills = events.filter((e) => e.type === 'kill' && e.byTurret);
+    expect(kills.length).toBeGreaterThan(0);
+    for (const k of kills) if (k.type === 'kill') expect(k.enemy.fact.unknown).toBe('a');
   });
 });

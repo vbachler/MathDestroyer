@@ -44,7 +44,7 @@ export function hueDistance(a: number, b: number): number {
 
 /** Sector disc radius: grows with the number of systems. */
 export function sectorRadius(systemCount: number): number {
-  return 130 + 55 * Math.max(1, systemCount);
+  return 80 + 45 * Math.max(1, systemCount);
 }
 
 export interface Disc { x: number; y: number; radius: number; }
@@ -150,6 +150,19 @@ export function scatterSystems(sector: Disc, count: number, others: readonly Poi
     out.push(point);
   }
   return out;
+}
+
+/** Room kept for a sector's name on the galaxy map: a horizontal band (world units) through one
+ *  of these offsets from the sector centre (fractions of its radius) with no star in it. Sized
+ *  for the opening view (names about 130 x 14 px at roughly a quarter scale). */
+export const NAME_BAND_HALF_W = 300;
+export const NAME_BAND_HALF_H = 56;
+export const NAME_BAND_OFFSETS: readonly number[] = [0, -0.35, 0.35, -0.6, 0.6];
+
+/** True when one of the name bands of the sector is free of the given systems. */
+export function hasNameBand(sector: Disc, points: readonly Point[]): boolean {
+  return NAME_BAND_OFFSETS.some((k) => points.every((p) =>
+    Math.abs(p.x - sector.x) > NAME_BAND_HALF_W || Math.abs(p.y - (sector.y + k * sector.radius)) > NAME_BAND_HALF_H));
 }
 
 /** Sun hues look like stars: warm reds and golds, or blue-white. */

@@ -1,26 +1,30 @@
 import type { AnswerRecord } from './battle';
 import { SECTORS, planetById, sectorById, systemById } from './content';
-import { applyOutcome, emptyStats } from './mastery';
-import type { FactStats, Locale } from './types';
+import { MAX_PLANET_LEVEL, applyOutcome, applyPlanetResult, emptyProgress, emptyStats } from './mastery';
+import type { FactStats, Locale, PlanetProgress } from './types';
 
 export interface SaveData {
   version: 1;
   locale: Locale;                 // default 'hr'
   credits: number;
   modules: Record<string, number>;
-  stats: Record<string, FactStats>;
+  stats: Record<string, FactStats>;   // keyed by Fact.statId
+  planets: Record<string, PlanetProgress>;   // planet progress by planet id; missing = level 0
   settings: { sfxVolume: number; musicVolume: number; keypadAlwaysVisible: boolean;
               gameSpeed: GameSpeed; };   // default 1; loadSave fills it for older saves
   totals: { missions: number; wins: number; bestScore: Record<string, number> }; // bestScore by planetId
   story: { seen: string[] };      // skill ids whose intro has been shown; loadSave fills it for older saves
-  location: Location;             // where the player's ship is; default: first system of type-1
+  location: Location;             // where the player's ship is; default: first system of add-5 (new players start in addition)
 }
 /** The player's position on the galaxy map. */
 export interface Location { sectorId: string; systemId: string; }
 
-/** First system of the first typing sector. */
+/** Sector a new player starts in ("Review fixes v5": addition, not typing). */
+export const START_SECTOR = 'add-5';
+
+/** First system of START_SECTOR. */
 export function defaultLocation(): Location {
-  const sector = SECTORS[0];
+  const sector = sectorById(START_SECTOR) ?? SECTORS[0];
   return { sectorId: sector.id, systemId: sector.systems[0].id };
 }
 
@@ -51,6 +55,7 @@ export function defaultSave(): SaveData {
     credits: 0,
     modules: {},
     stats: {},
+    planets: {},
     settings: { sfxVolume: 0.8, musicVolume: 0.6, keypadAlwaysVisible: false, gameSpeed: 1 },
     totals: { missions: 0, wins: 0, bestScore: {} },
     story: { seen: [] },
@@ -106,6 +111,22 @@ function statsRecord(v: unknown): Record<string, FactStats> {
   return out;
 }
 
+/** Planet progress of known planets only; level 0..5, finite numbers. Old saves without the key -> {}. */
+function planetsRecord(v: unknown): Record<string, PlanetProgress> {
+  const out: Record<string, PlanetProgress> = {};
+  if (!isObj(v)) return out;
+  for (const [k, x] of Object.entries(v)) {
+    if (!isObj(x) || !planetById(k)) continue;
+    const e = emptyProgress();
+    out[k] = {
+      level: Math.min(MAX_PLANET_LEVEL, Math.max(0, Math.round(num(x.level, e.level)))),
+      dueAt: num(x.dueAt, e.dueAt),
+      wins: Math.max(0, Math.round(num(x.wins, e.wins))),
+    };
+  }
+  return out;
+}
+
 /** Brings any parsed value to a valid SaveData, keeping every valid field and defaulting the rest.
  *  Fields of removed features (settings.unlockAll) are ignored. */
 export function migrate(raw: unknown): SaveData {
@@ -122,6 +143,7 @@ export function migrate(raw: unknown): SaveData {
     credits: Math.max(0, num(raw.credits, d.credits)),
     modules,
     stats: statsRecord(raw.stats),
+    planets: planetsRecord(raw.planets),
     settings: {
       sfxVolume: clamp01(num(settings.sfxVolume, d.settings.sfxVolume)),
       musicVolume: clamp01(num(settings.musicVolume, d.settings.musicVolume)),
@@ -157,19 +179,25 @@ export function writeSave(storage: StorageAdapter, save: SaveData): void {
   storage.setItem(SAVE_KEY, serialize(save));
 }
 
-/** Applies mission results: mastery records, credits, totals. Pure. */
+/** Applies mission results: mastery records (by statId), planet progress (needs the mission's
+ *  accuracy), credits, totals. Pure. */
 export function applyMission(save: SaveData, args: { planetId: string; records: AnswerRecord[];
-  credits: number; score: number; won: boolean; now: number }): SaveData {
-  const { planetId, records, credits, score, won, now } = args;
+  credits: number; score: number; won: boolean; accuracy: number; now: number }): SaveData {
+  const { planetId, records, credits, score, won, accuracy, now } = args;
   const stats = { ...save.stats };
   for (const r of records) {
     stats[r.factId] = applyOutcome(stats[r.factId] ?? emptyStats(), r.outcome, r.responseMs, now);
+  }
+  const planets = { ...save.planets };
+  if (planetById(planetId)) {
+    planets[planetId] = applyPlanetResult(planets[planetId] ?? emptyProgress(), { won, accuracy, now });
   }
   const prevBest = save.totals.bestScore[planetId] ?? 0;
   return {
     ...save,
     credits: save.credits + credits,
     stats,
+    planets,
     settings: { ...save.settings },
     modules: { ...save.modules },
     story: { seen: [...save.story.seen] },

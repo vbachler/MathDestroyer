@@ -1,26 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { PLANETS, SKILLS, planetById, planetsOfSector } from '../src/core/content';
-import { factsForPlanet } from '../src/core/facts';
+import { PLANETS, SKILLS, planetById } from '../src/core/content';
 import { defaultSave } from '../src/core/save';
 import type { SaveData } from '../src/core/save';
 import { CALL_SENDER, SYSTEM_SENDERS, callFor, markSeen, sectorCalls, stableHash } from '../src/core/story';
-import type { FactStats } from '../src/core/types';
+import type { PlanetProgress } from '../src/core/types';
 import enStory from '../src/locales/en/story.json';
 import hrStory from '../src/locales/hr/story.json';
-import { NOW, stat, statsFor } from './helpers';
+import { DAY, NOW, planetIds, progress } from './helpers';
 
 const dicts: Record<string, Record<string, string>> = { hr: hrStory, en: enStory };
 
 /** A save where every skill intro has been seen. */
-const seenAll = (stats: Record<string, FactStats> = {}): SaveData =>
-  ({ ...SKILLS.reduce((s, k) => markSeen(s, k), defaultSave()), stats });
+const seenAll = (planets: Record<string, PlanetProgress> = {}): SaveData =>
+  ({ ...SKILLS.reduce((s, k) => markSeen(s, k), defaultSave()), planets });
 
-const P = planetsOfSector('sub-15').map((p) => p.id);   // 8 planets
+const P = planetIds('sub-15');
 
-/** The planet under attack: mastery 0.6 with `due` due facts. */
-function attacked(stats: Record<string, FactStats>, pid: string, due: number): void {
-  factsForPlanet(pid).forEach((f, i) => { stats[f.id] = stat(3, i < due ? { dueAt: NOW - 1 } : {}); });
-}
+/** Every planet of P at one level, not due. */
+const all = (level: number): Record<string, PlanetProgress> => Object.fromEntries(P.map((id) => [id, progress(level)]));
 
 describe('sectorCalls', () => {
   it('fresh sector: liberate the first planet, then patrol nothing (all hostile)', () => {
@@ -28,25 +25,32 @@ describe('sectorCalls', () => {
     expect(calls.map((c) => [c.planetId, c.kind])).toEqual([[P[0], 'liberate']]);
   });
 
-  it('defend (most due first), then the next hostile planet, then the weakest non-hostile', () => {
-    const stats: Record<string, FactStats> = { ...statsFor(P.slice(0, 6), 4) };
-    attacked(stats, P[1], 2);
-    attacked(stats, P[4], 4);
-    attacked(stats, P[2], 3);
-    Object.assign(stats, statsFor([P[5]], 2));      // P[5] at 0.4: the weakest non-hostile planet left
-    const calls = sectorCalls('sub-15', seenAll(stats), NOW, 10);
+  it('defend (longest overdue first), then the next hostile planet, then the weakest non-hostile', () => {
+    const planets: Record<string, PlanetProgress> = {};
+    P.slice(0, 6).forEach((id) => { planets[id] = progress(4); });
+    planets[P[1]] = progress(3, { dueAt: NOW - 10 });
+    planets[P[4]] = progress(2, { dueAt: NOW - DAY });
+    planets[P[2]] = progress(1, { dueAt: NOW - 100 });
+    planets[P[5]] = progress(2);      // the weakest non-hostile planet that is not under attack
+    const calls = sectorCalls('sub-15', seenAll(planets), NOW, 10);
     expect(calls.map((c) => [c.planetId, c.kind])).toEqual([
       [P[4], 'defend'], [P[2], 'defend'], [P[1], 'defend'], [P[6], 'liberate'], [P[5], 'patrol'],
     ]);
-    expect(sectorCalls('sub-15', seenAll(stats), NOW, 2).map((c) => c.planetId)).toEqual([P[4], P[2]]);
-    expect(sectorCalls('sub-15', seenAll(stats), NOW, 0)).toEqual([]);
+    expect(sectorCalls('sub-15', seenAll(planets), NOW, 2).map((c) => c.planetId)).toEqual([P[4], P[2]]);
+    expect(sectorCalls('sub-15', seenAll(planets), NOW, 0)).toEqual([]);
   });
 
   it('a fully secured sector gets one patrol to its weakest planet', () => {
-    const stats = statsFor(P, 5);
-    Object.assign(stats, statsFor([P[7]], 4));
-    const calls = sectorCalls('sub-15', seenAll(stats), NOW, 3);
-    expect(calls.map((c) => [c.planetId, c.kind])).toEqual([[P[7], 'patrol']]);
+    const planets = all(5);
+    planets[P[P.length - 1]] = progress(4);
+    const calls = sectorCalls('sub-15', seenAll(planets), NOW, 3);
+    expect(calls.map((c) => [c.planetId, c.kind])).toEqual([[P[P.length - 1], 'patrol']]);
+  });
+
+  it('a lost mission brings a defend call (the planet is due now)', () => {
+    const planets = all(5);
+    planets[P[3]] = { level: 2, dueAt: NOW, wins: 4 };
+    expect(sectorCalls('sub-15', seenAll(planets), NOW, 1).map((c) => [c.planetId, c.kind])).toEqual([[P[3], 'defend']]);
   });
 
   it('messages: story.call.<kind>.1..3 by stable hash, sender from story.call.from, planet name param', () => {
@@ -62,7 +66,7 @@ describe('sectorCalls', () => {
     }
   });
 
-  it("the first call carries the skill intro until the skill is seen", () => {
+  it('the first call carries the skill intro until the skill is seen', () => {
     const fresh = defaultSave();
     const calls = sectorCalls('mul-c', fresh, NOW, 3);
     expect(calls[0]).toMatchObject({ storyKey: 'story.system.multiplication.text', sender: 'tarrow', kind: 'liberate' });
@@ -74,10 +78,7 @@ describe('sectorCalls', () => {
 
 describe('callFor', () => {
   it('picks the kind from the planet state', () => {
-    const stats: Record<string, FactStats> = {};
-    attacked(stats, P[3], 2);
-    Object.assign(stats, statsFor([P[6]], 3));
-    const save = seenAll(stats);
+    const save = seenAll({ [P[3]]: progress(2, { dueAt: NOW }), [P[6]]: progress(3) });
     expect(callFor(P[3], save, NOW).kind).toBe('defend');
     expect(callFor(P[0], save, NOW).kind).toBe('liberate');
     expect(callFor(P[6], save, NOW)).toEqual({

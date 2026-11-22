@@ -681,6 +681,21 @@ export interface SectorDef { id: string; skill: SkillId; nameKey: string; hue: n
     needing a borrow;
     `sub-100` a in 51..100, b in 6..59, fixed sample of 42 with at least half needing a borrow.
     Shuffled before chunking, like addition.
+  - **Density rule (overrides the planet and system counts above, including the "one table
+    per system with two planets" rule and the single-system exceptions).** The player found
+    sectors with one system and one or two planets too empty. Every sector except `core` has
+    **at least 3 systems**, and every system has **3 to 5 planets**; large sectors get more
+    systems (about one system per 4 planets of unique chunks, never fewer than 3).
+    A sector's facts are first cut into unique chunks as before. When those do not fill the
+    required planets, the remaining planets are *mix planets*: seeded selections of 5–6 facts
+    drawn from the whole sector, weighted toward facts that appear on the fewest planets so
+    coverage stays even, never duplicating a fact inside one planet, and no two planets of a
+    sector holding the identical set. A fact can therefore belong to several planets.
+    `planetFactList(planetId)` is the source of truth for a planet's facts;
+    `Fact.planetId` is the fact's primary (first) planet. Mastery, due facts, territory and
+    mission pools for a planet all use the planet's fact list. The "at most one trivial fact
+    per planet" balance limit applies to mix planets too.
+    The world may grow beyond 4800x2700 if needed to keep the spacing and overlap limits.
   - `add-20` and `sub-20` no longer exist.
   - **Balance rule (overrides the "no zero operand", ">= 2" and "no zero result" limits
     above).** Easy facts are allowed in every addition and subtraction sector, but only as a
@@ -740,7 +755,7 @@ export function callFor(planetId: string, save: SaveData, now: number): Call;
 ```
 
 `SaveData` gains `location: { sectorId: string; systemId: string }` (default: first system of
-`type-1`). Story keys `story.call.defend.1..3`, `story.call.liberate.1..3`,
+`add-5` since "Review fixes v5"). Story keys `story.call.defend.1..3`, `story.call.liberate.1..3`,
 `story.call.patrol.1..3` (param `{planet}`) replace `story.distress.*` and `story.next.*`.
 
 **Mission pool.** A mission at a planet uses that planet's facts plus up to 4 review facts
@@ -771,39 +786,30 @@ from other planets of the same sector (due first, then weakest). Missions have 3
 Framing may use thin HUD lines and a few small glyph controls in the corners (credits,
 hangar, report, menu), in our own style. No lists of filters, no paragraphs.
 
-**Core implementation notes (binding).**
+**Core implementation notes (binding; updated for "Random problems v4").**
 
 - Ids: sector `add-10`, `mul-c`, `core`; system `<sectorId>.s<n>`; planet `<sectorId>.<n>`
-  (1-based within the sector, galaxy order), e.g. `add-10.3`, `mul-c.4` (7 x 6..10), `core.1`
-  (`CORE_PLANET_ID`). Fact ids are unchanged.
-- Chunking: about n/6 planets, sizes as even as possible, larger first, all 5..8. Grouping:
-  about 4 planets per system, 3..5 each. Sectors that fit only two planets (`type-1` with 10
-  facts, `add-5` / `sub-5` with 12) are the exception: one system of two planets.
-- Addition / subtraction (`factgen.ts`): each sector has its ordinary facts plus easy facts
-  picked under the balance rule. Trivial count = floor(share x size) (at least 1; 20% for
-  `add-5` / `sub-5`, else 10%), capped at one per planet; operand-1 facts = floor(10% x size)
-  outside the "to 5" sectors (cap 15%). Easy facts keep the sum / minuend range and the operand
-  upper bounds; only the lower bounds are relaxed (0 + b / a + 0, 1 + b / a + 1; a − 0 / a − a,
-  a − 1 / a − (a − 1)), picked alternately left / right. Enumerated sectors get them on top of
-  the full range; the 42-fact samples replace that many ordinary facts and still have 21 that
-  need a carry / borrow (seeds 11..14). The whole sector is shuffled with its seed (101..115)
-  and each trivial fact is placed in a different planet. `sub-100` also requires `b <= a - 3`
-  (as `sub-50`). The other samples keep their old seeds and order. Result: 28 sectors,
-  52 systems, 153 planets, 864 facts. Saved stats for ids that no longer exist stay in the
-  save and are simply never asked again.
+  (1-based within the sector, galaxy order), e.g. `mul-c.5`, `core.1` (`CORE_PLANET_ID`).
+- Density (`content.ts`): systems per sector from its size (`sectorSize`: pool size when
+  enumerated, possible problems when generated): <= 40 -> 3, <= 150 -> 4, else 5
+  (`systemCountFor`); planets per system 3 + stableHash(`planets:<systemId>`) % 3. Result:
+  28 sectors, 105 systems, 405 planets.
+- Addition / subtraction to 5 / 10 / 15 (`factgen.ts`): the whole ordinary range plus easy facts
+  under the balance rule: trivial = floor(share x size) (at least 1; 20% in "to 5", else 10%),
+  operand-1 = floor(10% x size) outside "to 5" (cap 15%), picked alternately left / right with
+  the sector seeds 101..103 / 111..113 (unchanged, so their ids are too). 0 + 0, 0 − 0 never
+  appear. Saved stats for ids no sector holds any more stay in the save and are never asked.
 - Layout: the `core` sector sits at the world centre. The first sector of each skill follows an
   archimedean spiral outward; the skill's other sectors pack against the previous one (the
   fitting spot nearest the centre), so each skill is one cluster. Same-skill overlap <= 6%,
-  different skills 30 units apart. Radius `130 + 55 * systems`. Systems lie within the disc,
-  >= 70 apart galaxy-wide. Hue families 45 degrees apart (`SKILL_HUE`), 5 degrees between
-  sectors of a skill.
-- `planetMastery(core)` is the mean over every fact. `skillMastery(skill)` (mastery.ts) is the
-  mean over the skill's planets. `sectorMastery` / `systemMastery` weigh planets equally.
-- Mission pool: `reviewFacts` = seen facts (attempts > 0) of the sector's other planets, due
-  first (earliest dueAt), then lowest box; never-seen facts are not reviewed.
-- Calls: `sector order` = planets in system order. The patrol call skips planets already called.
-  `callFor` also carries the skill intro while the skill is unseen; it throws on an unknown id.
-  Call params are `{ planet: <generated planet name> }`; sender `abacus` (`story.call.from`).
+  different skills 30 units apart. Radius `80 + 45 * systems`. Systems lie within the disc,
+  >= 70 apart galaxy-wide; a sector's scatter is re-seeded (`pos:<id>:<n>`) until a horizontal
+  band for its name stays free (`hasNameBand`). The world stays 4800x2700. Hue families 45
+  degrees apart (`SKILL_HUE`), 5 degrees between sectors of a skill.
+- Calls: `sector order` = planets in system order. Defend calls are sorted by earliest
+  `dueAt` (longest overdue first). The patrol call skips planets already called. `callFor`
+  also carries the skill intro while the skill is unseen; it throws on an unknown id. Call
+  params are `{ planet: <generated planet name> }`; sender `abacus` (`story.call.from`).
 - `BattleConfig.unlockedPlanetIds` is removed; `MISSION_WAVES = 3` (battle.ts).
 - `SaveData.location`: a known `systemId` wins (its own sector is used); a known `sectorId`
   alone gives its first system; anything else gives the default.
@@ -811,6 +817,104 @@ hangar, report, menu), in our own style. No lists of filters, no paragraphs.
 **Enemy faction.** The Static is a hostile alien machine swarm. Hostile planets show its red
 marker; liberating a planet (raising its mastery) pushes it back, and neglected planets come
 under attack again.
+
+### Random problems v4 (supersedes fixed fact chunks per planet, mix planets, and planet mastery derived from facts)
+
+Player decision: the numbers must not be the same every time on the same planet. Every
+mission draws its problems at random from the whole sector's range.
+
+**Planets no longer own facts.** A planet is a place in a sector. `Fact.planetId`,
+`planetFactList`, unique chunks and mix planets are removed. Sector structure stays dense
+(at least 3 systems per sector, 3–5 planets per system; bigger sectors may have 4–5 systems,
+chosen deterministically from the sector's size).
+
+**Two kinds of sector, decided by the size of the problem space:**
+
+- *Enumerated* (120 possible problems or fewer: digits, addition/subtraction to 5, 10, 15,
+  every times-table and division sector): the pool is the **full** enumeration of the range
+  (no fixed samples), subject to the Balance rule's caps on easy facts. Knowledge is tracked
+  per fact, as before (`stats[fact.id]`).
+- *Generated* (more than 120 possible problems: `type-2`, `type-3`, addition/subtraction to
+  50 and 100, negatives, missing-number sectors): each problem is generated at random at
+  spawn time from the sector's range. Knowledge is tracked per **category**, not per
+  problem: each generated sector defines 2–4 categories that matter for learning (e.g.
+  `add-100`: `carry`, `nocarry`, `easy`; `sub-50`: `borrow`, `noborrow`, `easy`; negatives
+  by operation and sign pattern; missing-number by which operand is unknown; typing by
+  digit count). `Fact` gains `statId: string` — for enumerated facts it equals `id`, for
+  generated ones it is `cat:<sectorId>:<category>`. All mastery bookkeeping
+  (`AnswerRecord.factId`, `stats`, `isMastered` for the auto-turret) uses `statId`.
+  Generation honours the Balance rule as probabilities (easy at most 10%, at least half
+  carry/borrow where that applies) and never repeats the same problem twice in a row or
+  shows two identical problems on screen at once.
+
+**Choosing problems in a mission (`scheduler`).** Still adaptive, now over the whole sector:
+enumerated sectors weight facts as before (due and weak first, new facts introduced
+gradually: 6 in the first wave, then at most 3 new per wave; see "Review fixes v5"); generated sectors pick a
+category weighted toward weak/due categories, then random numbers inside it. A mission's
+order and content differ every time. The `core` planet draws from every sector the player
+has played.
+
+**Planet progress replaces fact-derived planet mastery** (so the territory map still works
+when every planet of a sector shares one pool):
+
+```ts
+export interface PlanetProgress { level: number; dueAt: number; wins: number; }  // level 0..5
+/** SaveData.planets: Record<planetId, PlanetProgress>; missing = level 0, never visited. */
+```
+
+- Winning a mission at a planet with accuracy >= 0.8 raises its level by 1 (max 5) if the
+  planet is due (`now >= dueAt`, or level 0) and sets `dueAt = now + PLANET_INTERVAL_MS[level]`
+  with intervals `[0, 20 min, 1 day, 3 days, 7 days, 21 days]`. A win when not due, or with
+  lower accuracy, changes nothing but `wins`. Losing a mission lowers the level by 1 (min 0)
+  and makes the planet due now. (Exception for level 0: see "Review fixes v5".)
+- `planetMastery(planetId, save) = level / 5`. `planetHold`: level 0 hostile, 1–2 contested,
+  3+ secured. `underAttack`: level >= 1 and `now >= dueAt`. `systemMastery` and
+  `sectorMastery` are means over planets. Signatures change from `stats` to `save` where
+  needed; update all callers.
+- The parent view reports real knowledge from `stats` (per fact for enumerated sectors, per
+  category for generated ones), independent of planet progress.
+- Variety between systems of a sector: system index (0-based, in sector order) is a
+  difficulty tier that multiplies enemy speed by `1 + 0.08 * tier` (passed into
+  `BattleConfig.speedScale` together with the player's game-speed setting).
+
+**Core implementation notes (v4, binding).**
+
+- `factgen.ts`: `sectorKind(id)` is `'enumerated'` when `possibleProblems(id) <= 120`
+  (`ENUMERATION_LIMIT`), else `'generated'`. By that count `type-2` (90), `miss-mul` (90) and
+  `miss-div` (90) are enumerated, although the list above names them generated. Enumerated:
+  `type-1` 10, `type-2` 90, `add-5` / `sub-5` 12, `add-10` / `sub-10` 29, `add-15` / `sub-15`
+  62, `mul-a` / `div-a` 30, other tables 20, `miss-mul` / `miss-div` 90 (666 facts). Generated
+  sectors and categories (shares; bounds): `type-3` zero / teen / plain; `add-50`, `add-100`
+  carry (0.55, min 0.5) / nocarry (0.37) / easy (0.08, max 0.1); `sub-50`, `sub-100` borrow /
+  noborrow / easy (same); `neg-10`, `neg-20` addMixed / addNegNeg / subNeg / subCross (nonzero
+  operands; `neg-20` has an operand beyond ±10); `miss-add`, `miss-sub` left (`? op b = c`) /
+  right (`a op ? = c`). `generateFact` picks uniformly from the category's enumerated candidates,
+  so every draw is inside the range and category. API: `sectorFacts`, `sectorCategories`,
+  `categoryDefs`, `generateFact`, `categoryStatId` (`cat:<sectorId>:<category>`); `facts.ts`
+  adds `allFacts` / `factById` (enumerated only), `sectorStatIds`, `sectorOfStat`.
+- `scheduler.ts`: `createMissionScheduler({ planetId, stats, planets, now, rng })` ->
+  `{ wave(waveIndex, count), replacement(waveIndex, exclude) }`. Enumerated: weights
+  (`statWeight`) as before; never-seen facts open in a mission order shuffled once at creation
+  (4 + 2 * waveIndex). Generated: `pickCategory` uses base share x weight, normalised, then
+  clamped to the category bounds (`categoryShares`); then up to 24 draws to avoid excluded ids.
+  `missionSectors`: the planet's sector; the core uses `playedSectors` (a stat whose
+  `sectorOfStat` is the sector, or a planet of it with wins > 0), fallback `type-1`; with
+  several sources each problem picks a sector uniformly.
+- `battle.ts`: the queue is built per wave from the scheduler (generated facts are created
+  then, with the sim's Rng). At spawn time a queued problem that is alive or was spawned last
+  swaps with the first later queued one that fits, else `replacement` draws one; if nothing
+  fits, the spawn waits. Records, `stats` and the turret use `fact.statId`; `missed` /
+  `explaining` keep the problem. `BattleConfig.planets` is the progress snapshot.
+- Planet progress (`mastery.ts`): `PLANET_INTERVAL_MS`, `applyPlanetResult`, `planetProgress`,
+  `planetMastery(planetId, save)`; `galaxy.ts`: `planetHold` / `underAttack` / `systemMastery`
+  / `sectorMastery` take any `{ planets }` (`ProgressHolder`). `applyMission` takes `accuracy`
+  (`sim.accuracy()`); unknown planet ids get no progress. `loadSave` keeps progress of known
+  planets only (level clamped 0..5); a save without `planets` loads `{}`.
+- Tier: `systemTier(planetId)`, `tierSpeedFactor = 1 + 0.08 * tier` (`content.ts`);
+  BattleScene passes `gameSpeed * tierSpeedFactor` as `speedScale`.
+- Parent report: `sectorKnowledge` / `galaxyKnowledge` (mean box / 5 over stat ids); enumerated
+  facts in rows of ten (tables as grids), generated sectors one cell per category
+  (`meta.category.<name>`). Results show the planet level ring (`level / 5`).
 
 ### Story layer
 
@@ -830,3 +934,16 @@ planet in distress, `{planet}` param), `story.result.win` / `.lose`, and
 - `npm run typecheck`, `npm test` and `npm run build` pass with no errors.
 - No `any` except where Phaser typings force it. No dead code, no TODO stubs for M1 features.
 - Every `core/` module has tests covering its rules above, including determinism of `BattleSim`.
+
+## Review fixes v5 (supersedes the matching rules above)
+
+1. **Variety in enumerated sectors.** `FIRST_WAVE_NEW_FACTS = 6`, `NEW_FACTS_PER_WAVE = 3`; a fact
+   not yet asked in the mission weighs `UNASKED_BONUS = 3` times more. Never the same problem
+   twice in a row or while an identical one is alive, whenever the pool has an alternative
+   (`scheduler.wave` excludes the last pick; `BattleSim.nextFact` excludes alive + last spawned).
+   A fresh first mission at `type-1` (30 spawns) shows at least 9 of the 10 digits.
+2. **Faster planet progress.** A win with accuracy >= 0.8 at level 0 gives level 2 with
+   `dueAt = now + PLANET_INTERVAL_MS[1]` (20 min), so a second good win that session secures it
+   (level 3). Every other transition is unchanged. Results shows the real old → new level.
+3. **Start in addition.** `defaultLocation()` is the first system of `add-5` (`START_SECTOR`);
+   stored valid locations are kept; `CORE_FALLBACK_SECTOR` stays `type-1`.

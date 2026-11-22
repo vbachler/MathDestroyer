@@ -1,13 +1,14 @@
-import { TABLES, chunkSizes, groupSizes, sectorFacts, tableFacts } from './factgen';
+import { possibleProblems, sectorFacts, sectorKind } from './factgen';
 import {
-  placeSectors, planetAngleFor, scatterSystems, sectorHue, sectorRadius, sunHueFor,
+  hasNameBand, placeSectors, planetAngleFor, scatterSystems, sectorHue, sectorRadius, sunHueFor,
 } from './layout';
-import type { Point } from './layout';
+import type { Disc, Point } from './layout';
 import { createNameRegistry, stableHash } from './names';
-import type { Fact, PlanetDef, SectorDef, SkillId, SystemDef } from './types';
+import type { PlanetDef, SectorDef, SkillId, SystemDef } from './types';
 
 /**
- * Galaxy content: Skill -> Sector -> System -> Planet (ARCHITECTURE.md "Galaxy map v3").
+ * Galaxy content: Skill -> Sector -> System -> Planet (ARCHITECTURE.md "Galaxy map v3" and
+ * "Random problems v4"). Planets own no facts: every mission draws from the whole sector.
  * Built once at module load, deterministic. Data only.
  */
 
@@ -27,46 +28,59 @@ const SECTOR_LIST: ReadonlyArray<readonly [string, SkillId]> = [
 export const CORE_SECTOR_ID = 'core';
 export const CORE_PLANET_ID = 'core.1';
 
-interface Shape { sectorId: string; skill: SkillId; systems: Fact[][][]; }   // systems -> planets -> facts
+/** Every sector except the core has 3..5 systems of 3..5 planets (ARCHITECTURE.md "Density rule"). */
+export const MIN_SYSTEMS_PER_SECTOR = 3;
+export const MAX_SYSTEMS_PER_SECTOR = 5;
+export const MIN_PLANETS_PER_SYSTEM = 3;
+export const MAX_PLANETS_PER_SYSTEM = 5;
+/** Enemy speed grows by this much per system tier (system index in its sector, 0-based). */
+export const TIER_SPEED_STEP = 0.08;
 
-/** Fact chunks of a sector grouped into systems (before layout and names). */
-function shapeOf(sectorId: string, skill: SkillId): Shape {
-  if (sectorId === CORE_SECTOR_ID) return { sectorId, skill, systems: [[[]]] };
-  const tables = TABLES[sectorId];
-  if (tables) {
-    // One system per times table, two planets: x1..x5 and x6..x10.
-    const op = sectorId.startsWith('mul') ? 'mul' : 'div';
-    return {
-      sectorId, skill,
-      systems: tables.map((n) => {
-        const facts = tableFacts(sectorId, op, n);
-        return [facts.slice(0, 5), facts.slice(5)];
-      }),
-    };
-  }
-  const facts = sectorFacts(sectorId);
-  const planets: Fact[][] = [];
-  let at = 0;
-  for (const size of chunkSizes(facts.length)) {
-    planets.push(facts.slice(at, at + size));
-    at += size;
-  }
-  const systems: Fact[][][] = [];
-  at = 0;
-  for (const size of groupSizes(planets.length)) {
-    systems.push(planets.slice(at, at + size));
-    at += size;
-  }
-  return { sectorId, skill, systems };
+/** Size of a sector's problem space: the pool of an enumerated sector, the possible problems of
+ *  a generated one. */
+export function sectorSize(sectorId: string): number {
+  return sectorKind(sectorId) === 'enumerated' ? sectorFacts(sectorId).length : possibleProblems(sectorId);
 }
 
-const planetFacts = new Map<string, readonly Fact[]>();
+/** Systems of a sector from its size: 3 up to 40 problems, 4 up to 150, else 5. */
+export function systemCountFor(size: number): number {
+  if (size <= 40) return MIN_SYSTEMS_PER_SECTOR;
+  if (size <= 150) return 4;
+  return MAX_SYSTEMS_PER_SECTOR;
+}
+
+/** Planets of a system, 3..5, stable per system id. */
+function planetCountFor(systemId: string): number {
+  return MIN_PLANETS_PER_SYSTEM + (stableHash(`planets:${systemId}`) % (MAX_PLANETS_PER_SYSTEM - MIN_PLANETS_PER_SYSTEM + 1));
+}
+
+interface Shape { sectorId: string; skill: SkillId; planetsPerSystem: number[]; }
+
+function shapeOf(sectorId: string, skill: SkillId): Shape {
+  if (sectorId === CORE_SECTOR_ID) return { sectorId, skill, planetsPerSystem: [1] };
+  const systems = systemCountFor(sectorSize(sectorId));
+  return { sectorId, skill, planetsPerSystem: Array.from({ length: systems }, (_, i) => planetCountFor(`${sectorId}.s${i + 1}`)) };
+}
+
+/** Attempts at scattering a sector's systems so that a band for its name stays free. */
+const NAME_BAND_TRIES = 40;
+
+/** System positions of a sector: the first seeded scatter that leaves a name band free. */
+function placeSystems(shape: Shape, disc: Disc, others: readonly Point[]): Point[] {
+  let points: Point[] = [];
+  for (let attempt = 0; attempt < NAME_BAND_TRIES; attempt++) {
+    const key = attempt === 0 ? `pos:${shape.sectorId}` : `pos:${shape.sectorId}:${attempt}`;
+    points = scatterSystems(disc, shape.planetsPerSystem.length, others, stableHash(key));
+    if (hasNameBand(disc, points)) break;
+  }
+  return points;
+}
 
 function buildGalaxy(): SectorDef[] {
   const shapes = SECTOR_LIST.map(([id, skill]) => shapeOf(id, skill));
   // The core sits at the centre of the galaxy; the skills spiral outward around it.
   const placeOrder = [...shapes.filter((s) => s.sectorId === CORE_SECTOR_ID), ...shapes.filter((s) => s.sectorId !== CORE_SECTOR_ID)];
-  const placedDiscs = placeSectors(placeOrder.map((s) => ({ radius: sectorRadius(s.systems.length), group: s.skill })));
+  const placedDiscs = placeSectors(placeOrder.map((s) => ({ radius: sectorRadius(s.planetsPerSystem.length), group: s.skill })));
   const discs = shapes.map((s) => placedDiscs[placeOrder.indexOf(s)]);
   const names = createNameRegistry();
   const allPoints: Point[] = [];
@@ -77,15 +91,13 @@ function buildGalaxy(): SectorDef[] {
     const disc = discs[order];
     const idx = skillIndex.get(shape.skill) ?? 0;
     skillIndex.set(shape.skill, idx + 1);
-    const points = scatterSystems(disc, shape.systems.length, allPoints, stableHash(`pos:${shape.sectorId}`));
+    const points = placeSystems(shape, disc, allPoints);
     allPoints.push(...points);
     let planetNo = 0;
-    const systems = shape.systems.map((planetChunks, si): SystemDef => {
+    const systems = shape.planetsPerSystem.map((count, si): SystemDef => {
       const systemId = `${shape.sectorId}.s${si + 1}`;
-      const planets = planetChunks.map((facts, orbit): PlanetDef => {
-        planetNo++;
-        const id = `${shape.sectorId}.${planetNo}`;
-        planetFacts.set(id, Object.freeze(facts.map((f) => Object.freeze({ ...f, planetId: id }))));
+      const planets = Array.from({ length: count }, (_, orbit): PlanetDef => {
+        const id = `${shape.sectorId}.${++planetNo}`;
         return {
           id, systemId, sectorId: shape.sectorId, name: names.nameFor(`planet:${id}`),
           orbit, angle: planetAngleFor(stableHash(`angle:${id}`)),
@@ -151,7 +163,15 @@ export function sectorsOfSkill(skill: SkillId): SectorDef[] {
   return SECTORS.filter((s) => s.skill === skill);
 }
 
-/** Facts of a planet as built (frozen); [] for the core planet and unknown ids. Used by facts.ts. */
-export function planetFactList(planetId: string): readonly Fact[] {
-  return planetFacts.get(planetId) ?? [];
+/** Difficulty tier of a planet: the index of its system in its sector (0-based; 0 for unknown ids). */
+export function systemTier(planetId: string): number {
+  const p = planetById(planetId);
+  const sector = p ? sectorById(p.sectorId) : undefined;
+  return Math.max(0, sector?.systems.findIndex((s) => s.id === p?.systemId) ?? 0);
+}
+
+/** Enemy speed factor of a planet's tier: 1 + 0.08 * tier (BattleConfig.speedScale multiplies it
+ *  with the game-speed setting). */
+export function tierSpeedFactor(planetId: string): number {
+  return 1 + TIER_SPEED_STEP * systemTier(planetId);
 }

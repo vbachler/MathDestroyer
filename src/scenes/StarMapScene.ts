@@ -211,8 +211,8 @@ export class StarMapScene extends Phaser.Scene {
     const now = app.now();
     this.mode = 'system';
     this.galaxy.setLocation(system.id);
-    if (this.systemView.systemId !== system.id) this.systemView.show(system, app.save.stats, now);
-    else this.systemView.refresh(app.save.stats, now);
+    if (this.systemView.systemId !== system.id) this.systemView.show(system, app.save, now);
+    else this.systemView.refresh(app.save, now);
     this.systemView.setCalls(this.pending);
     this.toggle.setGlyph(drawGalaxyGlyph);
     this.setHoverCursor(false);
@@ -249,7 +249,7 @@ export class StarMapScene extends Phaser.Scene {
     this.mode = 'galaxy';
     const now = app.now();
     const g = this.galaxy;
-    g.refreshTerritory(app.save.stats, now);
+    g.refreshTerritory(app.save, now);
     const i = g.systemIndex(app.save.location.systemId);
     g.setView(g.systemX(i), g.systemY(i), CLOSE_ZOOM);
     g.root.setVisible(true).setAlpha(0);
@@ -387,7 +387,7 @@ export class StarMapScene extends Phaser.Scene {
     const planet = planetById(call.planetId);
     if (!planet) return;
     const { t } = app.i18n;
-    const m = planetMastery(planet.id, app.save.stats);
+    const m = planetMastery(planet.id, app.save);
     let x: number;
     let y: number;
     let r: number;
@@ -403,7 +403,7 @@ export class StarMapScene extends Phaser.Scene {
     app.sfx.radioChirp();
     // Now and then the Static can be heard on the channel of a planet it holds.
     const nowMs = this.time.now;
-    if (planetHold(planet.id, app.save.stats) === 'hostile' && nowMs - this.lastChatter > CHATTER_COOLDOWN_MS
+    if (planetHold(planet.id, app.save) === 'hostile' && nowMs - this.lastChatter > CHATTER_COOLDOWN_MS
         && Math.random() < 0.5) {
       this.lastChatter = nowMs;
       app.sfx.alienChatter(undefined, 0.4);

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { app } from '../app';
 import { formatSolved } from '../core/facts';
-import { masteryBand } from '../core/mastery';
+import { MAX_PLANET_LEVEL, masteryBand } from '../core/mastery';
 import type { Fact } from '../core/types';
 import { battleBgFor, hasImage } from '../fx/assets';
 import { Starfield } from '../fx/Starfield';
@@ -19,9 +19,13 @@ export interface ResultsSceneData {
   missed: Fact[];
   accuracy: number;
   bestStreak: number;
+  /** Planet mastery (level / 5) before and after the mission. */
   masteryBefore: number;
   masteryAfter: number;
 }
+
+/** Planet level as "level / 5" for a mastery fraction. */
+const levelText = (mastery: number): string => `${Math.round(mastery * MAX_PLANET_LEVEL)} / ${MAX_PLANET_LEVEL}`;
 
 const CX = GAME_WIDTH / 2;
 const OUTCOME_Y = 118;
@@ -40,7 +44,7 @@ const BUTTONS_Y = 640;
 
 /**
  * Mission result over the dimmed battle background: outcome in two words, four numbers,
- * the planet's mastery ring animating before -> after, missed facts as a compact grid of
+ * the planet's level ring animating before -> after, missed facts as a compact grid of
  * solved facts, one story line and two small buttons (retry, map). Enter or Space = map.
  */
 export class ResultsScene extends Phaser.Scene {
@@ -112,7 +116,7 @@ export class ResultsScene extends Phaser.Scene {
     });
   }
 
-  /** Ring from before to after (animated), a tick where it stood before, and the two numbers. */
+  /** Planet level ring from before to after (animated), a tick where it stood before, and the two levels. */
   private buildMastery(data: ResultsSceneData): void {
     const { t } = app.i18n;
     const g = this.add.graphics();
@@ -123,17 +127,17 @@ export class ResultsScene extends Phaser.Scene {
       CX + Math.cos(angle) * (RING_R + 7), RING_Y + Math.sin(angle) * (RING_R + 7));
     const value = this.add.text(CX, RING_Y, '', numeralStyle({ fontSize: `${SIZES.heading}px` })).setOrigin(0.5);
     // "before ->" left of the ring; the ring and its centre number animate to "after".
-    this.add.text(CX - RING_R - 40, RING_Y, percentText(app.i18n, data.masteryBefore),
+    this.add.text(CX - RING_R - 40, RING_Y, levelText(data.masteryBefore),
       numeralStyle({ fontSize: `${SIZES.body}px`, color: CSS.textDim })).setOrigin(1, 0.5);
     this.add.text(CX - RING_R - 22, RING_Y, '→', numeralStyle({ fontSize: `${SIZES.body}px`, color: CSS.textDim }))
       .setOrigin(0.5);
-    this.add.text(CX, RING_Y + RING_R + 14, t('battle.results.mastery').toUpperCase(),
+    this.add.text(CX, RING_Y + RING_R + 14, t('battle.results.level').toUpperCase(),
       capsStyle({ fontSize: `${SIZES.small}px`, color: CSS.textDim })).setOrigin(0.5, 0);
 
     const draw = (v: number): void => {
       g.clear();
       drawRing(g, CX, RING_Y, RING_R, v, BAND_COLORS[masteryBand(v)], 3);
-      value.setText(percentText(app.i18n, v));
+      value.setText(levelText(v));
     };
     draw(data.masteryBefore);
     const counter = { v: data.masteryBefore };

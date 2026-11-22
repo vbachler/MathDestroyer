@@ -1,25 +1,54 @@
-import { PLANETS, planetFactList } from './content';
+import { SECTORS } from './content';
+import { categoryStatId, parseCategoryStatId, sectorCategories, sectorFacts, sectorKind } from './factgen';
 import { formatNumber, opSymbol } from './i18n';
 import type { Fact, Locale } from './types';
 
-/** Facts of one planet in its fixed order. Deterministic: the same list on every call and
- *  every run; [] for the core planet and unknown ids. Returns a fresh array. */
-export function factsForPlanet(planetId: string): Fact[] {
-  return planetFactList(planetId).slice();
-}
+export {
+  categoryDefs, categoryStatId, generateFact, parseCategoryStatId, sectorCategories, sectorFacts, sectorKind,
+} from './factgen';
+export type { CategoryDef, SectorKind } from './factgen';
 
 let all: readonly Fact[] | null = null;
 let index: Map<string, Fact> | null = null;
+let sectorOfId: Map<string, string> | null = null;
 
-/** Every fact of the game, in galaxy order. */
-export function allFacts(): Fact[] {
-  if (!all) all = PLANETS.flatMap((p) => planetFactList(p.id));
-  return all.slice();
+function build(): void {
+  const facts: Fact[] = [];
+  sectorOfId = new Map();
+  for (const sector of SECTORS) {
+    for (const f of sectorFacts(sector.id)) {
+      facts.push(f);
+      sectorOfId.set(f.id, sector.id);
+    }
+  }
+  all = facts;
+  index = new Map(facts.map((f) => [f.id, f]));
 }
 
+/** Every fact of every enumerated sector once, in galaxy order. Returns a fresh array. */
+export function allFacts(): Fact[] {
+  if (!all) build();
+  return (all ?? []).slice();
+}
+
+/** An enumerated fact by id (generated problems have no fixed id). */
 export function factById(id: string): Fact | undefined {
-  if (!index) index = new Map(allFacts().map((f) => [f.id, f]));
-  return index.get(id);
+  if (!index) build();
+  return index?.get(id);
+}
+
+/** Stat ids that hold a sector's knowledge: its fact ids (enumerated) or category ids (generated). */
+export function sectorStatIds(sectorId: string): string[] {
+  if (sectorKind(sectorId) === 'generated') return sectorCategories(sectorId).map((c) => categoryStatId(sectorId, c));
+  return sectorFacts(sectorId).map((f) => f.statId);
+}
+
+/** The sector a stat id belongs to, or undefined for ids no sector holds (e.g. removed facts). */
+export function sectorOfStat(statId: string): string | undefined {
+  const cat = parseCategoryStatId(statId);
+  if (cat) return sectorCategories(cat.sectorId).includes(cat.category) ? cat.sectorId : undefined;
+  if (!sectorOfId) build();
+  return sectorOfId?.get(statId);
 }
 
 /**
