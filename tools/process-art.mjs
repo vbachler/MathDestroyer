@@ -13,7 +13,9 @@ const SRC = path.join(ROOT, 'art-src');
 const OUT = path.join(ROOT, 'public', 'assets');
 
 const BACKGROUNDS = ['bg_battle_ocean', 'bg_battle_desert', 'bg_battle_ice', 'bg_menu', 'bg_starmap', 'bg_bridge',
-  'bg_ftl', 'station_shop_bg'];
+  'bg_ftl', 'station_shop_bg', 'bg_hangar'];
+/** Boarding crawlers: green-screen source -> crawlers/<kind>.png (a scorpion, b spider, c crab, d beetle). */
+const CRAWLERS = { crawler_a: 'scorpion', crawler_b: 'spider', crawler_c: 'crab', crawler_d: 'beetle' };
 const SHIPS = ['ship_enemy_a', 'ship_enemy_b', 'ship_enemy_c', 'ship_player', 'station_orbital'];
 const PLANETS = ['planet_1', 'planet_2', 'planet_3', 'planet_4', 'planet_5', 'planet_6', 'planet_7', 'planet_8'];
 const PORTRAITS = ['portrait_tarrow', 'portrait_kito', 'portrait_abacus'];
@@ -22,6 +24,7 @@ const ICONS = ['slowField', 'autoTurret', 'overcharge', 'salvage', 'repairDrone'
 
 const JPEG = { quality: 86, mozjpeg: true, chromaSubsampling: '4:4:4' };
 const SHIP_BOX = 256;
+const CRAWLER_BOX = 512;
 const PLANET_SIZE = 256;
 const DASH_WIDTH = 1920;
 
@@ -197,7 +200,35 @@ function squareJpeg(size) {
  * brightness gradients in the backdrop. Only greenish pixels connected to the border are
  * keyed, so green-tinted details inside the ship never become holes.
  */
-async function chromaKey(src, out) {
+/**
+ * `opts.shadows`: also key the creature's cast shadow on the green. A shadow is dark but its
+ * hue is still the backdrop's (g far above r and b), so it is keyed by hue ratio as well, but
+ * only where green is above SHADOW_G_LO (the creature's own dark underside, which carries some
+ * green spill, is darker than that and stays opaque).
+ */
+function chromaKey(box, opts = {}) {
+  return (src, out) => chromaKeyInto(src, out, box, opts.shadows === true);
+}
+
+const SHADOW_G_LO = 30;
+const SHADOW_G_HI = 45;
+/** Green dominance by ratio: 1 for pure green, 0 for neutral. */
+const hueGreen = (data, i) => (data[i + 1] <= 0 ? 0 : (data[i + 1] - Math.max(data[i], data[i + 2])) / data[i + 1]);
+
+async function chromaKeyInto(src, out, boxSize, shadows) {
+  const { data, w, h } = await keyRgba(src, shadows);
+  const box = alphaBounds(data, w, h, 6);
+  if (!box) throw new Error('nothing left after keying');
+  await rawImage(data, w, h)
+    .extract(box)
+    .resize(boxSize, boxSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png({ compressionLevel: 9 })
+    .toFile(out);
+  return `keyed, trimmed ${box.width}x${box.height}, fit ${boxSize}x${boxSize} png`;
+}
+
+/** Keys one green-screen image to RGBA with alpha (see chromaKey). */
+async function keyRgba(src, shadows) {
   const { data, w, h } = await loadRgba(src);
   const n = w * h;
 
@@ -212,12 +243,26 @@ async function chromaKey(src, out) {
     }
   }
   const bgKey = Math.max(40, median(border));
+  const borderHue = [];
+  if (shadows) {
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        if (x >= ring && y >= ring && x < w - ring && y < h - ring) continue;
+        borderHue.push(hueGreen(data, (y * w + x) * 4));
+      }
+    }
+  }
+  const bgHue = Math.max(0.4, median(borderHue));
 
   // Normalised greenness: ~1 on the backdrop, <= 0 on neutral / non-green colours.
   const g = new Float32Array(n);
   for (let p = 0; p < n; p++) {
     const i = p * 4;
     g[p] = greenness(data, i) / bgKey;
+    if (shadows) {
+      const shade = smoothstep(SHADOW_G_LO, SHADOW_G_HI, data[i + 1]) * (hueGreen(data, i) / bgHue);
+      if (shade > g[p]) g[p] = shade;
+    }
   }
 
   // Background region: greenish pixels (soft edge included) connected to the border.
@@ -252,6 +297,17 @@ async function chromaKey(src, out) {
     const l = islands.labels[p];
     if (l >= 0 && islands.sizes[l] < minIsland) alpha[p] = 0;
   }
+  if (shadows) {
+    // Remains of a cast shadow: faint islands not attached to the creature (any alpha counts).
+    const any = new Uint8Array(n);
+    for (let p = 0; p < n; p++) any[p] = alpha[p] > 0.02 ? 1 : 0;
+    const parts = components(any, w, h);
+    const main = Math.max(0, ...parts.sizes);
+    for (let p = 0; p < n; p++) {
+      const l = parts.labels[p];
+      if (l >= 0 && parts.sizes[l] < main * 0.01) alpha[p] = 0;
+    }
+  }
   // Feather: soften the edge by ~1.5 px without growing the object (blur then pull in slightly).
   const blurred = boxBlur(alpha, w, h, 1);
   for (let p = 0; p < n; p++) alpha[p] = clamp01(Math.min(alpha[p], blurred[p]) * 1.08 - 0.04);
@@ -271,15 +327,66 @@ async function chromaKey(src, out) {
     if (data[i + 1] > limit) data[i + 1] = Math.round(limit);
     data[i + 3] = Math.round(a * 255);
   }
+  return { data, w, h };
+}
 
-  const box = alphaBounds(data, w, h, 6);
-  if (!box) throw new Error('nothing left after keying');
-  await rawImage(data, w, h)
-    .extract(box)
-    .resize(SHIP_BOX, SHIP_BOX, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png({ compressionLevel: 9 })
-    .toFile(out);
-  return `keyed, trimmed ${box.width}x${box.height}, fit ${SHIP_BOX}x${SHIP_BOX} png`;
+const WALK_FRAMES = 16;
+const WALK_COLS = 4;
+const WALK_CELL = 256;
+
+/**
+ * Walk cycle: art-src/crawler_frames/<kind>/00..15.png (green screen, creature walking in
+ * place) keyed like the stills, cropped with ONE square box shared by all frames (the union
+ * of their alpha bounds, centred) so the creature does not jitter, and packed into a 4x4 sheet
+ * of 256 px cells, frame i at column i % 4, row i / 4.
+ */
+async function walkSheet(kind) {
+  const dir = path.join(SRC, 'crawler_frames', kind);
+  const out = path.join(OUT, 'crawlers', `${kind}_walk.png`);
+  const files = Array.from({ length: WALK_FRAMES }, (_, i) => path.join(dir, `${String(i).padStart(2, '0')}.png`));
+  const absent = files.filter((f) => !existsSync(f));
+  if (absent.length) {
+    missing.push(`crawler_frames/${kind}`);
+    console.log(`WARNING: missing ${absent.length} walk frame(s) in ${rel(dir)} (expected for ${rel(out)})`);
+    return;
+  }
+  try {
+    const keyed = [];
+    for (const f of files) keyed.push(await keyRgba(f, true));
+    let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
+    for (const k of keyed) {
+      const b = alphaBounds(k.data, k.w, k.h, 6);
+      if (!b) continue;
+      x0 = Math.min(x0, b.left); y0 = Math.min(y0, b.top);
+      x1 = Math.max(x1, b.left + b.width); y1 = Math.max(y1, b.top + b.height);
+    }
+    if (!Number.isFinite(x0)) throw new Error('nothing left after keying');
+    const side = Math.max(x1 - x0, y1 - y0) + 4;
+    const cx = (x0 + x1) / 2; const cy = (y0 + y1) / 2;
+    const left = Math.round(cx - side / 2); const top = Math.round(cy - side / 2);
+    const cells = [];
+    for (let i = 0; i < keyed.length; i++) {
+      const k = keyed[i];
+      // Pad with transparency so the shared square box may run past the frame edge.
+      const pad = side;
+      const padded = await rawImage(k.data, k.w, k.h)
+        .extend({ left: pad, top: pad, right: pad, bottom: pad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .raw().toBuffer({ resolveWithObject: true });
+      const cell = await sharp(padded.data, { raw: { width: padded.info.width, height: padded.info.height, channels: 4 } })
+        .extract({ left: left + pad, top: top + pad, width: side, height: side })
+        .resize(WALK_CELL, WALK_CELL, { fit: 'fill' })
+        .png().toBuffer();
+      cells.push({ input: cell, left: (i % WALK_COLS) * WALK_CELL, top: Math.floor(i / WALK_COLS) * WALK_CELL });
+    }
+    await ensureDir(out);
+    const rows = Math.ceil(WALK_FRAMES / WALK_COLS);
+    await sharp({ create: { width: WALK_COLS * WALK_CELL, height: rows * WALK_CELL, channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+      .composite(cells).png({ compressionLevel: 9 }).toFile(out);
+    report(dir, out, `${WALK_FRAMES} frames keyed, shared box ${side}px at ${left},${top}, ${WALK_COLS}x${rows} sheet of ${WALK_CELL}px`);
+  } catch (err) {
+    console.log(`WARNING: failed to build ${rel(out)}: ${err instanceof Error ? err.message : err}`);
+  }
 }
 
 /** Deterministic PRNG for RANSAC (mulberry32). */
@@ -499,7 +606,9 @@ async function copyVoice() {
 
 for (const n of BACKGROUNDS) await job(n, `bg/${n}.jpg`, background);
 await job('dash_strip', 'ui/dash.png', dashStrip);
-for (const n of SHIPS) await job(n, `ships/${n}.png`, chromaKey);
+for (const n of SHIPS) await job(n, `ships/${n}.png`, chromaKey(SHIP_BOX));
+for (const [n, kind] of Object.entries(CRAWLERS)) await job(n, `crawlers/${kind}.png`, chromaKey(CRAWLER_BOX, { shadows: true }));
+for (const kind of Object.values(CRAWLERS)) await walkSheet(kind);
 for (const n of PLANETS) await job(n, `planets/${n}.png`, planet);
 for (const n of PORTRAITS) await job(n, `portraits/${n}.jpg`, squareJpeg(384));
 for (const id of ICONS) await job(`icon_${id}`, `icons/${id}.jpg`, squareJpeg(256));
@@ -510,6 +619,8 @@ await copyVoice();
 const expected = [
   ...BACKGROUNDS.map((n) => `assets/bg/${n}.jpg`),
   'assets/ui/dash.png',
+  ...Object.values(CRAWLERS).map((kind) => `assets/crawlers/${kind}.png`),
+  ...Object.values(CRAWLERS).map((kind) => `assets/crawlers/${kind}_walk.png`),
   ...SHIPS.map((n) => `assets/ships/${n}.png`),
   ...PLANETS.map((n) => `assets/planets/${n}.png`),
   ...PORTRAITS.map((n) => `assets/portraits/${n}.jpg`),

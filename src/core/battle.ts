@@ -34,16 +34,40 @@ export const TURRET_POINTS = 5;
 export const WRONG_PENALTY = 5;
 export const REPAIR_STREAK = 10;
 
+// ---- Attack and boarding (v6) ----
+/** An armed enemy charges its laser while its y is at or below this line. */
+export const FIRE_LINE_Y = 330;
+/** Hull points of the player's ship; at 0 the ship is boarded. */
+export const HULL_MAX = 3;
+/** Charge time of an enemy laser at speedScale 1. */
+export const CHARGE_MS = 4000;
+/** Tolerance for the sum of sub-step charge increments (floating point). */
+const CHARGE_EPSILON = 1e-9;
+/** Points (and kills) per crawler destroyed in a boarding. */
+export const BOARDING_KILL_POINTS = 10;
+/** Crawlers per boarding (also exported by core/boarding). */
+export const BOARDING_CRAWLERS = 8;
+/** Chance that an enemy is armed, by wave (index 0 = wave 1); later waves use the last value. */
+export const ARMED_CHANCE: readonly number[] = [0.25, 0.35, 0.45];
+
 export const enemiesInWave = (w: number): number => 6 + 2 * w;
 export const spawnIntervalMs = (w: number, speedScale = 1): number => Math.max(1800, 3600 - 250 * w) / speedScale;
 export const baseSpeed = (w: number, speedScale = 1): number => (20 + 3 * w) * speedScale;
+export const armedChance = (w: number): number => ARMED_CHANCE[Math.min(Math.max(1, w), ARMED_CHANCE.length) - 1];
+/** Time an armed enemy needs from charge 0 to firing. */
+export const chargeMs = (speedScale = 1): number => CHARGE_MS / speedScale;
 export interface Enemy {
   id: number; fact: Fact; lane: number; x: number; y: number;
   speed: number;            // px per second, already including modifiers
   spawnedAt: number;        // sim time ms
+  armed: boolean;           // shoots at the ship once below FIRE_LINE_Y
+  charge: number;           // 0..1; fires at 1
 }
 export interface Dome { hp: number; maxHp: number; }   // hp 0 = destroyed
-export type BattlePhase = 'spawning' | 'waveCleared' | 'explaining' | 'won' | 'lost';
+export type BattlePhase = 'spawning' | 'waveCleared' | 'explaining' | 'boarding' | 'won' | 'lost';
+
+/** Result of a boarding fight, handed back by the boarding scene. */
+export interface BoardingResult { repelled: boolean; records: AnswerRecord[]; kills: number; }
 
 export interface BattleState {
   phase: BattlePhase;
@@ -64,6 +88,11 @@ export interface BattleState {
   autoTurretCooldownMs: number;
   /** Impacts the shield upgrade can still absorb in the current wave (refilled at each wave start). */
   shieldCharges: number;
+  /** Ship hull; an enemy laser hit costs 1, at 0 the ship is boarded. */
+  hull: number;
+  hullMax: number;
+  /** Boardings repelled this mission. */
+  boardings: number;
 }
 
 export type BattleEvent =
@@ -77,6 +106,10 @@ export type BattleEvent =
   | { type: 'waveCleared'; wave: number }
   | { type: 'explainStart'; fact: Fact }
   | { type: 'explainEnd' }
+  /** An armed enemy fired at the ship; `hull` is the hull left after the hit. */
+  | { type: 'shipHit'; enemy: Enemy; hull: number }
+  /** The hull reached 0: phase 'boarding' until resolveBoarding(). */
+  | { type: 'breach' }
   | { type: 'won' } | { type: 'lost' };
 
 /** One recorded answer, applied to mastery by the caller after the mission. `factId` holds the
@@ -149,6 +182,9 @@ export class BattleSim {
       explaining: null,
       autoTurretCooldownMs: 0,
       shieldCharges: 0,
+      hull: HULL_MAX,
+      hullMax: HULL_MAX,
+      boardings: 0,
     };
     this.effects = upgradeEffects(this.state.ownedUpgrades);
     if (this.effects.turretCooldownMs !== null) this.state.autoTurretCooldownMs = this.effects.turretCooldownMs;
@@ -213,7 +249,28 @@ export class BattleSim {
     this.stepSpawn(dt, ev);
     for (const e of s.enemies) e.y += (e.speed * dt) / 1000;
     this.stepImpacts(ev);
+    if (s.phase === 'spawning') this.stepCharge(dt, ev);
     if (s.phase === 'spawning') this.checkWaveEnd(ev);
+  }
+
+  /** Armed enemies below the fire line charge; at 1 they hit the hull. At hull 0: breach. */
+  private stepCharge(dt: number, ev: BattleEvent[]): void {
+    const s = this.state;
+    const rate = dt / chargeMs(this.speedScale);
+    for (const e of s.enemies) {
+      if (!e.armed || e.y < FIRE_LINE_Y) continue;
+      e.charge = Math.min(1, e.charge + rate);
+      if (e.charge < 1 - CHARGE_EPSILON) continue;
+      e.charge = 0;
+      s.hull = Math.max(0, s.hull - 1);
+      ev.push({ type: 'shipHit', enemy: e, hull: s.hull });
+      if (s.hull === 0) {
+        s.phase = 'boarding';
+        s.input = '';
+        ev.push({ type: 'breach' });
+        return;
+      }
+    }
   }
 
   private stepTurret(dt: number, ev: BattleEvent[]): void {
@@ -244,6 +301,8 @@ export class BattleSim {
     if (!fact) return;   // every candidate is on screen already: wait for one to go
     const lane = this.rng.pick(free);
     const factor = 0.9 + 0.2 * this.rng.next();
+    // The first enemy of a mission is never armed (and draws nothing for it).
+    const armed = this.nextEnemyId > 1 && this.rng.next() < armedChance(s.wave);
     const enemy: Enemy = {
       id: this.nextEnemyId++,
       fact,
@@ -252,6 +311,8 @@ export class BattleSim {
       y: SPAWN_Y,
       speed: baseSpeed(s.wave, this.speedScale) * factor * this.effects.speedMult,
       spawnedAt: s.timeMs,
+      armed,
+      charge: 0,
     };
     s.enemies.push(enemy);
     this.spawnTimerMs = spawnIntervalMs(s.wave, this.speedScale);
@@ -437,6 +498,35 @@ export class BattleSim {
     this.lastSubmitAt = s.timeMs;
     ev.push({ type: 'wrong', typed });
     return ev;
+  }
+
+  // ---------------------------------------------------------------- boarding
+
+  /** Problems for one boarding, drawn from the mission scheduler with the usual weighting.
+   *  Consumes the sim Rng: call once per boarding. */
+  boardingFacts(n: number = BOARDING_CRAWLERS): Fact[] {
+    return this.scheduler.wave(this.state.wave - 1, Math.max(0, Math.floor(n)));
+  }
+
+  /** Applies the outcome of a boarding (phase 'boarding' only; otherwise no-op, []).
+   *  Repelled: hull refilled, every charge reset, back to 'spawning'. Not repelled: 'lost'. */
+  resolveBoarding(result: BoardingResult): BattleEvent[] {
+    const s = this.state;
+    if (s.phase !== 'boarding') return [];
+    this.records.push(...result.records);
+    const kills = Math.max(0, Math.floor(result.kills));
+    s.score += BOARDING_KILL_POINTS * kills;
+    s.kills += kills;
+    s.input = '';
+    if (!result.repelled) {
+      s.phase = 'lost';
+      return [{ type: 'lost' }];
+    }
+    s.hull = s.hullMax;
+    for (const e of s.enemies) e.charge = 0;
+    s.boardings++;
+    s.phase = 'spawning';
+    return [];
   }
 
   // ---------------------------------------------------------------- between waves

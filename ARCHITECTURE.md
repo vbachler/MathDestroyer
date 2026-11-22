@@ -947,3 +947,108 @@ planet in distress, `{planet}` param), `story.result.win` / `.lose`, and
    (level 3). Every other transition is unchanged. Results shows the real old → new level.
 3. **Start in addition.** `defaultLocation()` is the first system of `add-5` (`START_SECTOR`);
    stored valid locations are kept; `CORE_FALLBACK_SECTOR` stays `type-1`.
+
+## Attack and boarding layer v6
+
+Player request: sometimes the aliens shoot back at our ship (visible lasers, camera shake); if
+we do not stop them in time we get a boarding party: alien crawlers (scorpion, spider, crab,
+beetle machines of the Static) come at us through a damaged hangar and we shoot them with a
+laser turret by solving problems. Text budget rules still apply: no sentences on screen.
+
+### Core: armed enemies and hull (`core/battle.ts`)
+
+- `Enemy` gains `armed: boolean` and `charge: number` (0..1). An enemy is armed with chance
+  0.25 / 0.35 / 0.45 in waves 1 / 2 / 3 (drawn from the sim Rng at spawn); the first enemy of
+  a mission is never armed.
+- An armed enemy with `y >= FIRE_LINE_Y` (330) charges: `charge += dt / CHARGE_MS`, with
+  `CHARGE_MS = 4000 / speedScale`. At 1 it fires: event `{ type: 'shipHit'; enemy; hull }`,
+  `state.hull -= 1`, `charge = 0` (it charges again while alive). Charging stops in every
+  phase except `spawning`.
+- `BattleState` gains `hull` (starts at `HULL_MAX = 3`), `hullMax`, `boardings` (count).
+- When `hull` reaches 0: phase `'boarding'` (new `BattlePhase`), event `{ type: 'breach' }`.
+  In `'boarding'` `step` and all input methods do nothing.
+- `sim.boardingFacts(n = BOARDING_CRAWLERS): Fact[]` draws problems from the mission
+  scheduler with the usual weighting (it consumes the Rng; call once per boarding).
+- `sim.resolveBoarding(result: { repelled: boolean; records: AnswerRecord[]; kills: number })`:
+  appends the records, adds `BOARDING_KILL_POINTS` (10) per kill to the score and kills;
+  repelled → `hull = hullMax`, every enemy `charge = 0`, phase back to `'spawning'`,
+  `boardings += 1`; not repelled → phase `'lost'` and event `lost` (returned from the call).
+- The shield upgrade and domes are unchanged; ship hits do not touch domes or the streak.
+
+### Core: boarding (`core/boarding.ts`, pure, tested)
+
+```ts
+export type CrawlerKind = 'scorpion' | 'spider' | 'crab' | 'beetle';
+export const CRAWLER_SPEED: Record<CrawlerKind, number>;  // scorpion 1, spider 1.2, crab 0.85, beetle 1
+export const BOARDING_CRAWLERS = 8;      // per boarding
+export const BOARDING_MAX_ALIVE = 3;
+export const BOARDING_MAX_BITES = 3;
+export const APPROACH_MS = 11000;        // z 1 -> 0 at speed factor 1, divided by speedScale
+export const BOARDING_SPAWN_MS = 2600;   // divided by speedScale; first spawn after 1200 ms
+export interface Crawler { id: number; fact: Fact; kind: CrawlerKind; lane: -1 | 0 | 1;
+                           z: number;        // 1 = far door, 0 = at the turret
+                           speed: number;    // z per second
+                           spawnedAt: number; }
+export interface BoardingState { phase: 'fighting' | 'repelled' | 'overrun'; timeMs: number;
+                                 crawlers: Crawler[]; input: string; bites: number; maxBites: number;
+                                 remaining: number;   // not yet spawned
+                                 kills: number; }
+export type BoardingEvent =
+  | { type: 'spawn'; crawler: Crawler } | { type: 'kill'; crawler: Crawler; fast: boolean }
+  | { type: 'wrong'; typed: number } | { type: 'bite'; crawler: Crawler }
+  | { type: 'repelled' } | { type: 'overrun' };
+export class BoardingSim {
+  constructor(cfg: { facts: Fact[]; seed: number; speedScale: number });
+  readonly state: BoardingState; readonly records: AnswerRecord[];
+  step(dtMs: number): BoardingEvent[];
+  // the same input methods and signatures as BattleSim (digit, sign, backspace, submit)
+}
+```
+
+Rules: a submit kills the nearest (smallest z) crawler whose answer matches, else it is a
+`wrong` (the turret fires and misses; nothing else happens). A crawler reaching `z <= 0`
+bites: `bites += 1`, the crawler is removed, its fact is recorded as missed. `bites ==
+maxBites` → `overrun`. All crawlers spawned and none alive → `repelled`. Lanes avoid placing
+two crawlers on the same lane closer than 0.25 in z. Records use the same outcomes and
+"fast" rule as BattleSim.
+
+### Presentation
+
+- **Battle (`BattleScene`, `fx/`):** an armed ship shows a red glow at its nose that grows
+  with `charge`, plus a hairline red aiming line to the cockpit in the last quarter. On
+  `shipHit`: a thick red beam from the ship to the bottom centre, camera shake (about 250 ms),
+  a red vignette flash, the dashboard flickers, `Sfx.enemyLaser()` + `Sfx.hullHit()`. Hull is
+  shown as three small pips on the dashboard (glyph, at most one short label word).
+  On `breach`: alarm, long shake, white-red flash, then `scene.pause()` and
+  `scene.launch('Boarding', { facts, seed, speedScale, onDone })`; `onDone` calls
+  `sim.resolveBoarding` and resumes the battle or ends the mission as lost.
+- **Boarding (`BoardingScene`):** `bg_hangar` full screen, one-point perspective. A crawler at
+  depth z is drawn between the far door (about y 300, scale 0.08) and the bottom (about y 640,
+  scale 1) with a perspective curve (slow growth far away, fast when close), x spread by lane
+  growing as it nears, darker tint when far, sorted by z. The stills are animated in code:
+  quick leg-skitter (small rotation and squash oscillation, per-crawler phase), bob, zig-zag.
+  Each carries the same problem tag as battle ships. `turret` sprite at the bottom centre
+  swivels to the target and fires a beam; kills use the explosion fx; a bite makes the crawler
+  lunge to fill the screen, red flash, heavy shake. Bites left are three pips. Flickering
+  light and a red beacon pulse; a one-word title (`battle.boarding`) for about a second at
+  the start. Input: DOM keydown through `ui/keymap.ts`, and the touch `Keypad` as in battle.
+- **Audio (`audio/Sfx.ts`):** `enemyLaser, hullHit, breachAlarm, skitter, screech, turretShot,
+  bite`; skitter volume follows the nearest crawler.
+- **Assets:** `art-src/bg_hangar.png` → `bg/bg_hangar.jpg`; `art-src/crawler_{a..d}.png`
+  (green screen; a scorpion, b spider, c crab, d beetle) → `crawlers/<kind>.png` (512 box);
+  `art-src/turret_gun.png` (green screen) → `ui/turret.png`. Code-drawn fallbacks when missing.
+
+### v6 core implementation notes
+
+- `BOARDING_CRAWLERS` lives in `battle.ts` and is re-exported by `boarding.ts` (no import cycle:
+  `boarding.ts` takes `MAX_INPUT_DIGITS` / `MAX_STEP_MS` / `AnswerRecord` from `battle.ts`).
+  Extra exports: `CHARGE_MS`, `ARMED_CHANCE`, `armedChance(w)` (waves beyond 3 use 0.45),
+  `BoardingResult`; `CRAWLER_KINDS`, `BOARDING_FIRST_SPAWN_MS` (1200, not scaled, like
+  `WAVE_START_DELAY_MS`), `LANE_GAP_Z`, `BOARDING_LANES`, `BoardingConfig`.
+- Per step: move, impacts, then charge (so an enemy that lands this step never fires); overshoot
+  past 1 is dropped. A breach clears the input. `resolveBoarding` outside `'boarding'` is a no-op.
+- Boarding kills and records do not change `sim.accuracy()`.
+- Crawlers take the facts in the given order; kind is uniform (drawn once, kept while the spawn
+  waits). The lane rule holds for the whole approach: a lane is free only if the gap to every
+  crawler on it stays >= 0.25 until that one bites (a faster newcomer cannot catch up); with no
+  free lane the spawn waits. A wrong answer records `wrong` once per crawler (BattleSim rule).

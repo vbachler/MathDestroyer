@@ -7,7 +7,7 @@ describe('core layering rule', () => {
 
   it('has every core module', () => {
     expect(files.sort()).toEqual([
-      'battle.ts', 'content.ts', 'economy.ts', 'factgen.ts', 'facts.ts', 'galaxy.ts', 'i18n.ts',
+      'battle.ts', 'boarding.ts', 'content.ts', 'economy.ts', 'factgen.ts', 'facts.ts', 'galaxy.ts', 'i18n.ts',
       'layout.ts', 'mastery.ts', 'names.ts', 'rng.ts', 'save.ts', 'scheduler.ts', 'story.ts',
       'types.ts', 'upgrades.ts',
     ]);

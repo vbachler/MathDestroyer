@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { app } from '../app';
-import { BattleSim, DOME_X, IMPACT_Y, SPAWN_Y } from '../core/battle';
-import type { BattleEvent, Enemy } from '../core/battle';
+import { BattleSim, DOME_X, FIRE_LINE_Y, IMPACT_Y, SPAWN_Y } from '../core/battle';
+import type { BattleEvent, BoardingResult, Enemy } from '../core/battle';
 import { tierSpeedFactor } from '../core/content';
 import { missionCredits } from '../core/economy';
 import { formatProblem } from '../core/facts';
@@ -12,7 +12,7 @@ import type { Fact } from '../core/types';
 import { battleBgFor, enemyImageFor, hasImage } from '../fx/assets';
 import { beam, flash, hexShield, ring, shipExplosion, sparks } from '../fx/BattleFx';
 import {
-  GUN_LEFT, GUN_RIGHT, KEY_GAP, KEYPAD_DIGITS, KEYPAD_FIRE, layoutTags, missPoint, PAUSE_RECT, shipScreenY,
+  COCKPIT, GUN_LEFT, GUN_RIGHT, KEY_GAP, KEYPAD_DIGITS, KEYPAD_FIRE, layoutTags, missPoint, PAUSE_RECT, shipScreenY,
   shipSize, STATION_Y,
 } from '../fx/battleLayout';
 import type { Point, TagItem, TagSide } from '../fx/battleLayout';
@@ -20,10 +20,9 @@ import { Dashboard } from '../fx/Dashboard';
 import { EnemyShip } from '../fx/EnemyShip';
 import type { ThreatLevel } from '../fx/EnemyShip';
 import { ExplanationCard } from '../fx/ExplanationCard';
-import { InputHint } from '../fx/InputHint';
-import type { HintTarget } from '../fx/InputHint';
 import { Starfield } from '../fx/Starfield';
 import { Station } from '../fx/Station';
+import { TEX } from '../fx/textures';
 import { Button } from '../ui/Button';
 import { addHitZone } from '../ui/hitZone';
 import { Keypad } from '../ui/Keypad';
@@ -31,6 +30,7 @@ import { isGameKey, keyAction } from '../ui/keymap';
 import { drawBrackets } from '../ui/Panel';
 import { capsStyle, numeralStyle } from '../ui/TextStyles';
 import { COLORS, CSS, DEPTH, GAME_HEIGHT, GAME_WIDTH, LETTER_SPACING, LINE_WIDTH, SIZES } from '../ui/theme';
+import type { BoardingSceneData } from './BoardingScene';
 import type { ResultsSceneData } from './ResultsScene';
 import type { UpgradeSceneData } from './UpgradeScene';
 
@@ -60,8 +60,11 @@ const END_BANNER_MS = 1500;
 const WAVE_BANNER_MS = 1100;
 /** The wrong-answer stab lands just after the loud part of the missed shot. */
 const WRONG_SOUND_DELAY_MS = 200;
-/** First-mission input hint retires after this many correct answers. */
-const HINT_CORRECT_TO_RETIRE = 2;
+/** Ship hit: shake, then the hull clang just after the zap. */
+const HIT_SHAKE_MS = 250;
+const HULL_SOUND_DELAY_MS = 70;
+/** Breach: alarm, long shake and flashes, then the boarding scene. */
+const BREACH_MS = 1500;
 
 function threatOf(y: number): ThreatLevel {
   if (y >= CRIT_Y) return 2;
@@ -81,9 +84,6 @@ export class BattleScene extends Phaser.Scene {
   private tagSides = new Map<number, TagSide>();
   private stations: Station[] = [];
   private dash!: Dashboard;
-  private hint: InputHint | null = null;
-  private hintCorrect = 0;
-  private keypadShown = false;
 
   private explainDim: Phaser.GameObjects.Rectangle | null = null;
   private explainCard: ExplanationCard | null = null;
@@ -91,6 +91,12 @@ export class BattleScene extends Phaser.Scene {
 
   private paused = false;
   private ending = false;
+  /** Between `breach` and the end of the boarding. */
+  private breaching = false;
+  /** Set when resuming from Boarding (no wave banner then). */
+  private quietResume = false;
+  private speedScale = 1;
+  private breachFx: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super('Battle');
@@ -109,12 +115,14 @@ export class BattleScene extends Phaser.Scene {
     this.pauseOverlay = null;
     this.paused = false;
     this.ending = false;
-    this.hint = null;
-    this.hintCorrect = 0;
-    this.keypadShown = false;
+    this.breaching = false;
+    this.quietResume = false;
+    this.breachFx = [];
 
     const save = app.save;
     const now = app.now();
+    // Later systems of a sector are harder: their tier speeds the enemies up.
+    this.speedScale = save.settings.gameSpeed * tierSpeedFactor(this.planetId);
     this.sim = new BattleSim({
       planetId: this.planetId,
       totalWaves: TOTAL_WAVES,
@@ -123,8 +131,7 @@ export class BattleScene extends Phaser.Scene {
       modules: { ...save.modules },
       now,
       seed: now % 0x7fffffff,
-      // Later systems of a sector are harder: their tier speeds the enemies up.
-      speedScale: save.settings.gameSpeed * tierSpeedFactor(this.planetId),
+      speedScale: this.speedScale,
     });
 
     this.cameras.main.setBackgroundColor(COLORS.bg);
@@ -133,11 +140,10 @@ export class BattleScene extends Phaser.Scene {
     const { t } = app.i18n;
     this.dash = new Dashboard(this, {
       wave: t('battle.hud.wave'), score: t('battle.hud.score'), streak: t('battle.hud.streak'), stations: t('battle.hud.stations'),
+      hull: t('battle.hud.hull'),
     });
     this.buildPauseGlyph();
     this.buildKeypad();
-    // Onboarding for the very first mission only: shows what to type and that Enter fires.
-    if (save.totals.missions === 0) this.hint = new InputHint(this, this.keypadShown);
 
     // Plain DOM listener: Phaser's keyboard queue can re-emit earlier events within one frame.
     window.removeEventListener('keydown', this.onKeyDown);
@@ -147,9 +153,30 @@ export class BattleScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
 
+    if (import.meta.env.DEV) this.installDevHooks();
+
     app.sfx.startAmbience('battle');
     this.showWaveBanner();
     this.renderState();
+  }
+
+  /**
+   * DEV only: `window.__forceBreach()` puts the hull at 1 and makes the lowest enemy an armed
+   * ship about to fire (moved down to the fire line if needed), so the next step plays the real
+   * shipHit, breach and Boarding path. Returns false when no enemy is on screen yet.
+   */
+  private installDevHooks(): void {
+    (window as unknown as { __forceBreach?: () => boolean }).__forceBreach = (): boolean => {
+      const s = this.sim.state;
+      let target: Enemy | undefined;
+      for (const e of s.enemies) if (!target || e.y > target.y) target = e;
+      if (!target || s.phase !== 'spawning') return false;
+      s.hull = 1;
+      target.armed = true;
+      target.charge = 0.999;
+      target.y = Math.max(target.y, FIRE_LINE_Y);
+      return true;
+    };
   }
 
   update(_time: number, delta: number): void {
@@ -159,7 +186,6 @@ export class BattleScene extends Phaser.Scene {
     for (const st of this.stations) st.update(dt);
     for (const ship of this.ships.values()) ship.tick(dt);
     this.renderState();
-    this.hint?.update(this.hintTarget(), this.sim.state.input, dt);
     app.sfx.setTension(this.tensionLevel());
   }
 
@@ -213,7 +239,6 @@ export class BattleScene extends Phaser.Scene {
   private buildKeypad(): void {
     const show = app.save.settings.keypadAlwaysVisible || this.sys.game.device.input.touch;
     if (!show) return;
-    this.keypadShown = true;
     new Keypad(this, {
       onDigit: (d) => { if (this.acceptsInput()) this.sim.typeDigit(d); },
       onSign: () => { if (this.acceptsInput()) this.sim.toggleSign(); },
@@ -227,7 +252,7 @@ export class BattleScene extends Phaser.Scene {
   // ------------------------------------------------------------------ input
 
   private acceptsInput(): boolean {
-    return !this.paused && !this.ending;
+    return !this.paused && !this.ending && !this.breaching;
   }
 
   private fire(): void {
@@ -268,6 +293,8 @@ export class BattleScene extends Phaser.Scene {
         case 'waveCleared': this.onWaveCleared(); break;
         case 'explainStart': this.showExplanation(ev.fact); break;
         case 'explainEnd': this.hideExplanation(); break;
+        case 'shipHit': this.onShipHit(ev.enemy); break;
+        case 'breach': this.onBreach(); break;
         case 'won': this.onMissionEnd(true); break;
         case 'lost': this.onMissionEnd(false); break;
       }
@@ -296,22 +323,7 @@ export class BattleScene extends Phaser.Scene {
     return ship ? { x: ship.x, y: ship.y } : { x: e.x, y: shipScreenY(e.y) };
   }
 
-  /** The enemy a submit would hit first (lowest, ties to the lower id, as in core/battle), or null when hidden. */
-  private hintTarget(): HintTarget | null {
-    const s = this.sim.state;
-    if (this.paused || this.ending || s.phase !== 'spawning') return null;
-    let lowest: Enemy | undefined;
-    for (const e of s.enemies) if (!lowest || e.y > lowest.y || (e.y === lowest.y && e.id < lowest.id)) lowest = e;
-    const ship = lowest ? this.ships.get(lowest.id) : undefined;
-    if (!lowest || !ship) return null;
-    return { x: ship.x, y: ship.y, halfW: ship.shipHalfWidth, halfH: ship.shipHalfHeight, answer: lowest.fact.answer };
-  }
-
   private onKill(e: Enemy, byTurret: boolean, points: number): void {
-    if (!byTurret && this.hint?.active && ++this.hintCorrect >= HINT_CORRECT_TO_RETIRE) {
-      this.hint.fadeOut();
-      this.hint = null;
-    }
     const p = this.shipPoint(e);
     const size = this.ships.get(e.id)?.shipSize ?? shipSize(e.y);
     this.removeShip(e.id);
@@ -389,7 +401,83 @@ export class BattleScene extends Phaser.Scene {
 
   /** Back from the Upgrade overlay (sim.pickUpgrade() or sim.nextWave() has been called). */
   private onResume(): void {
+    if (this.quietResume) {
+      this.quietResume = false;
+      return;
+    }
     this.showWaveBanner();
+  }
+
+  // ------------------------------------------------------------------ attack and boarding
+
+  /** An armed ship fired: a thick red beam into the cockpit, shake, red vignette, console flicker. */
+  private onShipHit(e: Enemy): void {
+    const ship = this.ships.get(e.id);
+    const from = ship ? ship.nose : { x: e.x, y: shipScreenY(e.y) + shipSize(e.y) * 0.42 };
+    const to = { x: COCKPIT.x + randomFrom(-40, 40), y: COCKPIT.y };
+    beam(this, from, to, COLORS.danger, { width: 1.6, durationMs: 320 });
+    beam(this, from, to, COLORS.white, { width: 0.35, durationMs: 200 });
+    flash(this, from.x, from.y, COLORS.white, 34, 220);
+    const impact = this.add.image(to.x, to.y, TEX.glow).setTint(COLORS.danger).setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(DEPTH.hud + 3).setScale(0.6);
+    this.tweens.add({ targets: impact, scale: 2.2, alpha: 0, duration: 450, ease: 'Cubic.easeOut', onComplete: () => impact.destroy() });
+    sparks(this, to.x, to.y - 6, COLORS.danger, 12, 140);
+    this.cameras.main.shake(HIT_SHAKE_MS, 0.007);
+    this.vignette(COLORS.danger, 0.65, 520);
+    this.dash.flicker();
+    app.sfx.enemyLaser();
+    this.time.delayedCall(HULL_SOUND_DELAY_MS, () => app.sfx.hullHit());
+  }
+
+  /** Full-screen edge glow that fades from `peak` alpha. */
+  private vignette(color: number, peak: number, durationMs: number): void {
+    const v = this.add.image(CX, GAME_HEIGHT / 2, TEX.vignette).setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+      .setTint(color).setDepth(DEPTH.overlay - 30).setAlpha(peak);
+    this.tweens.add({ targets: v, alpha: 0, duration: durationMs, ease: 'Quad.easeIn', onComplete: () => v.destroy() });
+  }
+
+  /** Hull at 0: alarm, long shake, white-red flash, then the Boarding scene over the paused battle. */
+  private onBreach(): void {
+    if (this.breaching || this.ending) return;
+    this.breaching = true;
+    this.hideExplanation();
+    this.closePause();
+    app.sfx.breachAlarm();
+    this.cameras.main.shake(BREACH_MS, 0.009);
+    const white = this.add.rectangle(CX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.white, 0.85).setDepth(DEPTH.overlay - 4);
+    const red = this.add.rectangle(CX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.danger, 0).setDepth(DEPTH.overlay - 5);
+    const edge = this.add.image(CX, GAME_HEIGHT / 2, TEX.vignette).setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+      .setTint(COLORS.danger).setDepth(DEPTH.overlay - 6).setAlpha(0);
+    this.breachFx = [white, red, edge];
+    this.tweens.add({ targets: white, alpha: 0, duration: 260, ease: 'Quad.easeOut' });
+    this.tweens.add({ targets: red, alpha: 0.35, duration: 300, yoyo: true, repeat: 2 });
+    this.tweens.add({ targets: edge, alpha: 1, duration: 500 });
+    this.dash.flicker(BREACH_MS);
+    this.time.delayedCall(BREACH_MS, () => this.launchBoarding());
+  }
+
+  private launchBoarding(): void {
+    if (this.ending || !this.scene.isActive()) return;
+    for (const o of this.breachFx) o.destroy();
+    this.breachFx = [];
+    const s = this.sim.state;
+    const data: BoardingSceneData = {
+      facts: this.sim.boardingFacts(),
+      seed: (this.sim.config.seed + 7919 * (s.boardings + 1)) % 0x7fffffff,
+      speedScale: this.speedScale,
+      onDone: (r) => this.onBoardingDone(r),
+    };
+    this.scene.pause();
+    this.scene.launch('Boarding', data);
+  }
+
+  /** Boarding finished: resolve it in the sim, resume, and end the mission if the ship was lost. */
+  private onBoardingDone(result: BoardingResult): void {
+    this.breaching = false;
+    const events = this.sim.resolveBoarding(result);
+    this.quietResume = true;
+    this.scene.resume();
+    this.handleEvents(events);
   }
 
   private onMissionEnd(won: boolean): void {
@@ -528,6 +616,7 @@ export class BattleScene extends Phaser.Scene {
       ship.setShipSize(shipSize(e.y))
         .setPosition(e.x, shipScreenY(e.y))
         .setThreat(threatOf(e.y))
+        .setCharge(e.armed ? e.charge : null, COCKPIT)
         .setDepth(DEPTH.enemies + e.y / 1000);
       items.push({
         id: e.id, x: ship.x, y: ship.y, shipHalfW: ship.shipHalfWidth, shipHalfH: ship.shipHalfHeight,
@@ -544,6 +633,7 @@ export class BattleScene extends Phaser.Scene {
     this.dash.setScore(s.score);
     this.dash.setStreak(s.streak);
     this.dash.setStations(s.domes);
+    this.dash.setHull(s.hull, s.hullMax);
     const shown = s.input.startsWith('-') ? `${MINUS}${s.input.slice(1)}` : s.input;
     const blinkOn = Math.floor(this.time.now / 500) % 2 === 0;
     this.dash.setInput(shown, blinkOn && s.phase === 'spawning' && !this.paused && !this.ending);
@@ -567,8 +657,9 @@ export class BattleScene extends Phaser.Scene {
     this.explainDim = null;
     this.explainCard = null;
     this.pauseOverlay = null;
-    this.hint?.destroy();
-    this.hint = null;
+    this.breachFx = [];
+    if (import.meta.env.DEV) delete (window as unknown as { __forceBreach?: unknown }).__forceBreach;
     if (this.scene.isActive('Upgrade') || this.scene.isPaused('Upgrade')) this.scene.stop('Upgrade');
+    if (this.scene.isActive('Boarding') || this.scene.isPaused('Boarding')) this.scene.stop('Boarding');
   }
 }

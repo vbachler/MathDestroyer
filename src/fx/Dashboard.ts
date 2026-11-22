@@ -7,6 +7,11 @@ import type { Rect } from './battleLayout';
 
 const BOTTOM_SHADE_KEY = 'tex-battle-bottom-shade';
 const SCANLINE_STEP = 3;
+/** Hull pips: one row on the console hood above the centre screen. */
+const HULL_ROW_Y = 611;
+const HULL_PIP_W = 14;
+const HULL_PIP_H = 5;
+const HULL_PIP_GAP = 5;
 
 /** Amber CRT text: mono numerals with a soft glow. */
 function crt(size: number): Phaser.Types.GameObjects.Text.TextStyle {
@@ -47,11 +52,18 @@ export class Dashboard {
   private readonly caret: Phaser.GameObjects.Rectangle;
   private readonly stations: Phaser.GameObjects.Graphics;
   private readonly inputHome: number;
+  private readonly hullLabel: Phaser.GameObjects.Text;
+  private readonly hullPips: Phaser.GameObjects.Graphics;
+  /** Everything the console drew (flickers on a hit). */
+  private readonly parts: Phaser.GameObjects.GameObject[];
   private stationSig = '';
+  private hullSig = '';
+  private flickerEvent: Phaser.Time.TimerEvent | null = null;
 
-  constructor(scene: Phaser.Scene, labels: { wave: string; score: string; streak: string; stations: string }) {
+  constructor(scene: Phaser.Scene, labels: { wave: string; score: string; streak: string; stations: string; hull: string }) {
     this.scene = scene;
     const depth = DEPTH.hud;
+    const firstChild = scene.children.list.length;
 
     ensureBottomShade(scene);
     if (scene.textures.exists(BOTTOM_SHADE_KEY)) {
@@ -90,6 +102,57 @@ export class Dashboard {
       .setOrigin(0.5).setDepth(depth + 1));
     this.caret = scene.add.rectangle(this.inputHome, c.y + c.h / 2, 12, 3, COLORS.primary)
       .setOrigin(0, 0.5).setDepth(depth + 1);
+
+    this.hullLabel = scene.add.text(0, HULL_ROW_Y, labels.hull.toUpperCase(),
+      capsStyle({ fontSize: `${SIZES.small - 1}px`, color: CSS.primaryDim, letterSpacing: 1 }))
+      .setOrigin(1, 0.5).setDepth(depth + 1);
+    this.hullPips = scene.add.graphics().setDepth(depth + 1);
+    this.parts = scene.children.list.slice(firstChild);
+  }
+
+  /** Ship hull as a row of small pips (filled = intact), the label to their left. */
+  setHull(hull: number, max: number): void {
+    const sig = `${hull}/${max}`;
+    if (sig === this.hullSig) return;
+    this.hullSig = sig;
+    const n = Math.max(0, max);
+    const rowW = n * HULL_PIP_W + Math.max(0, n - 1) * HULL_PIP_GAP;
+    const labelW = this.hullLabel.width + 8;
+    const x0 = this.inputHome - (rowW + labelW) / 2 + labelW;
+    this.hullLabel.setX(x0 - 8);
+    const low = hull <= 1;
+    this.hullLabel.setColor(low ? CSS.danger : CSS.primaryDim);
+    const g = this.hullPips;
+    g.clear();
+    for (let i = 0; i < n; i++) {
+      const x = x0 + i * (HULL_PIP_W + HULL_PIP_GAP);
+      const y = HULL_ROW_Y - HULL_PIP_H / 2;
+      if (i < hull) {
+        g.fillStyle(low ? COLORS.danger : COLORS.primary, 0.95);
+        g.fillRect(x, y, HULL_PIP_W, HULL_PIP_H);
+      } else {
+        g.lineStyle(LINE_WIDTH, COLORS.danger, 0.8);
+        g.strokeRect(x + 0.5, y + 0.5, HULL_PIP_W - 1, HULL_PIP_H - 1);
+      }
+    }
+  }
+
+  /** Hit: the console's lights stutter for a moment. */
+  flicker(durationMs = 420): void {
+    this.flickerEvent?.remove(false);
+    const steps = Math.max(2, Math.round(durationMs / 45));
+    const setAlpha = (a: number): void => {
+      for (const p of this.parts) (p as unknown as Phaser.GameObjects.Components.Alpha).setAlpha?.(a);
+    };
+    this.flickerEvent = this.scene.time.addEvent({
+      delay: 45,
+      repeat: steps - 1,
+      callback: () => {
+        const left = this.flickerEvent?.getRepeatCount() ?? 0;
+        setAlpha(left === 0 ? 1 : Math.random() < 0.5 ? 0.25 + Math.random() * 0.3 : 0.9);
+        if (left === 0) this.flickerEvent = null;
+      },
+    });
   }
 
   setWave(wave: number, total: number): void {

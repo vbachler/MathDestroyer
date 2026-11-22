@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BattleSim, DOME_X, EXPLAIN_MS, IMPACT_Y, LANE_X, MAX_ALIVE, MISSION_WAVES, SPAWN_Y, WAVE_START_DELAY_MS,
-  baseSpeed, enemiesInWave, spawnIntervalMs,
+  ARMED_CHANCE, BOARDING_KILL_POINTS, BattleSim, DOME_X, EXPLAIN_MS, FIRE_LINE_Y, HULL_MAX, IMPACT_Y, LANE_X,
+  MAX_ALIVE, MISSION_WAVES, SPAWN_Y, WAVE_START_DELAY_MS, armedChance, baseSpeed, chargeMs, enemiesInWave,
+  spawnIntervalMs,
 } from '../src/core/battle';
+import { BOARDING_CRAWLERS, BoardingSim } from '../src/core/boarding';
 import type { BattleConfig, BattleEvent, Enemy } from '../src/core/battle';
 import { CORE_PLANET_ID } from '../src/core/content';
 import { makeFact } from '../src/core/factgen';
@@ -40,11 +42,22 @@ function lowestEnemy(sim: BattleSim): Enemy {
   return [...sim.state.enemies].sort((a, b) => b.y - a.y)[0];
 }
 
-/** Steps until the predicate holds; returns all events. */
+/** Ends a boarding (if any) as repelled with no kills, so tests about other rules keep running. */
+function repel(sim: BattleSim): BattleEvent[] {
+  return sim.state.phase === 'boarding' ? sim.resolveBoarding({ repelled: true, records: [], kills: 0 }) : [];
+}
+
+/** update() that repels any boarding it causes. */
+function advance(sim: BattleSim, ms: number): BattleEvent[] {
+  const ev = sim.update(ms);
+  return [...ev, ...repel(sim)];
+}
+
+/** Steps until the predicate holds; returns all events. Boardings are repelled. */
 function runUntil(sim: BattleSim, pred: (ev: BattleEvent[]) => boolean, maxMs = 120_000, step = 16): BattleEvent[] {
   const all: BattleEvent[] = [];
   for (let t = 0; t < maxMs; t += step) {
-    const ev = sim.update(step);
+    const ev = advance(sim, step);
     all.push(...ev);
     if (pred(ev)) return all;
   }
@@ -62,7 +75,7 @@ const firstSpawn = (sim: BattleSim): Enemy => {
 function clearWave(sim: BattleSim): BattleEvent[] {
   const all: BattleEvent[] = [];
   for (let i = 0; i < 20000 && sim.state.phase === 'spawning'; i++) {
-    all.push(...sim.update(16));
+    all.push(...advance(sim, 16));
     while (sim.state.phase === 'spawning' && sim.state.enemies.length > 0) {
       all.push(...answer(sim, lowestEnemy(sim).fact.answer));
     }
@@ -77,8 +90,8 @@ function wrongDigit(sim: BattleSim): number {
 }
 
 /** A sim (seed searched deterministically) whose first between-wave shop offers `upgradeId`. */
-function simOffering(upgradeId: string, over: Partial<BattleConfig> = {}): BattleSim {
-  for (let seed = 1; seed < 500; seed++) {
+function simOffering(upgradeId: string, over: Partial<BattleConfig> = {}, fromSeed = 1): BattleSim {
+  for (let seed = fromSeed; seed < fromSeed + 500; seed++) {
     const sim = new BattleSim(cfg({ ...over, seed }));
     clearWave(sim);
     if (sim.offers().some((o) => o.def.id === upgradeId)) return sim;
@@ -146,7 +159,7 @@ describe('BattleSim setup', () => {
     let spawns = 0;
     let maxAlive = 0;
     for (let i = 0; i < 10000 && sim.state.phase !== 'waveCleared'; i++) {
-      const ev = sim.update(16);
+      const ev = advance(sim, 16);
       for (const x of ev) {
         if (x.type !== 'spawn') continue;
         spawns++;
@@ -204,12 +217,12 @@ describe('BattleSim pacing', () => {
     expect(sim.remainingToSpawn()).toBe(12);
     let sawCap = false;
     for (let i = 0; i < 3000 && sim.state.phase === 'spawning'; i++) {
-      sim.update(16);
+      advance(sim, 16);
       expect(sim.state.enemies.length).toBeLessThanOrEqual(MAX_ALIVE);
       if (sim.state.enemies.length === MAX_ALIVE) {
         sawCap = true;
         const pending = sim.remainingToSpawn();
-        sim.update(5000);                  // long enough for several intervals
+        advance(sim, 5000);                // long enough for several intervals
         expect(sim.state.enemies.length).toBeLessThanOrEqual(MAX_ALIVE);
         if (sim.state.phase === 'spawning' && sim.state.enemies.length === MAX_ALIVE) {
           expect(sim.remainingToSpawn()).toBe(pending);
@@ -429,7 +442,7 @@ describe('BattleSim impacts', () => {
 
     // Refilled at the next wave start.
     for (let i = 0; i < 200 && sim.state.phase !== 'waveCleared' && sim.state.phase !== 'lost'; i++) {
-      sim.update(EXPLAIN_MS);
+      advance(sim, EXPLAIN_MS);
       clearWave(sim);
     }
     expect(sim.state.phase).toBe('waveCleared');
@@ -542,7 +555,7 @@ describe('BattleSim waves and upgrades', () => {
     const streakBefore = sim.state.streak;
     const events: BattleEvent[] = [];
     for (let i = 0; i < 20000 && (sim.state.phase === 'spawning' || sim.state.phase === 'explaining'); i++) {
-      events.push(...sim.update(50));
+      events.push(...advance(sim, 50));
     }
     const turretKills = events.filter((e) => e.type === 'kill' && e.byTurret);
     const impacts = events.filter((e) => e.type === 'impact');
@@ -574,12 +587,28 @@ describe('BattleSim determinism', () => {
         log.push(...(offers.length > 0 ? sim.pickUpgrade(offers[tick % offers.length].def.id) : sim.nextWave()));
         continue;
       }
+      if (p === 'boarding') {
+        const board = new BoardingSim({ facts: sim.boardingFacts(), seed: seed + tick, speedScale: 1 });
+        for (let t = 0; t < 2000 && board.state.phase === 'fighting'; t++) {
+          board.step(100);
+          const target = [...board.state.crawlers].sort((x, y) => x.z - y.z)[0];
+          if (target && t % 7 === 0) {
+            for (const ch of String(Math.abs(target.fact.answer))) board.typeDigit(Number(ch));
+            if (target.fact.answer < 0) board.toggleSign();
+            board.submit();
+          }
+        }
+        log.push(...sim.resolveBoarding({
+          repelled: board.state.phase === 'repelled', records: board.records, kills: board.state.kills,
+        }));
+        continue;
+      }
       log.push(...sim.update(37 + (tick % 5) * 11));
       if (sim.state.phase !== 'spawning' || sim.state.enemies.length === 0) continue;
       if (tick % 13 === 0) {
         typeNumber(sim, 1);
         log.push(...sim.submit());
-      } else if (tick % 4 === 0) {
+      } else if (tick % 90 === 0) {   // slow play: armed enemies get to fire
         log.push(...answer(sim, lowestEnemy(sim).fact.answer));
       }
     }
@@ -587,12 +616,16 @@ describe('BattleSim determinism', () => {
   }
 
   it('same config and calls give identical state, records and events', () => {
+    let boardings = 0;
     for (const planetId of [planetIds('mul-c')[0], planetIds('add-100')[3], CORE_PLANET_ID]) {
       const a = script(123, planetId);
       expect(script(123, planetId)).toBe(a);
       expect(script(124, planetId)).not.toBe(a);
-      expect(JSON.parse(a).state.phase).toMatch(/won|lost/);
+      const parsed = JSON.parse(a) as { state: { phase: string }; log: BattleEvent[] };
+      expect(parsed.state.phase).toMatch(/won|lost/);
+      boardings += parsed.log.filter((e) => e.type === 'breach').length;
     }
+    expect(boardings).toBeGreaterThan(0);   // the script plays slowly enough to be boarded
   });
 
   it('factById resolves every fact the sim can produce', () => {
@@ -620,7 +653,7 @@ describe('BattleSim random problems (v4)', () => {
         else sim.nextWave();
         continue;
       }
-      for (const e of sim.update(40)) {
+      for (const e of advance(sim, 40)) {
         if (e.type !== 'spawn') continue;
         const ids = sim.state.enemies.map((x) => x.fact.id);
         expect(new Set(ids).size, `${planetId} seed ${seed}: ${ids.join(' ')}`).toBe(ids.length);
@@ -675,12 +708,205 @@ describe('BattleSim random problems (v4)', () => {
 
   it('the auto-turret uses the statId: it fires on problems of a mastered category only', () => {
     const stats = { 'cat:miss-add:left': stat(4), 'cat:miss-add:right': stat(1) };
-    const sim = simOffering('autoTurret', { planetId: planetIds('miss-add')[0], stats });
-    sim.pickUpgrade('autoTurret');
+    // Several missions (the weak 'right' category is drawn more often, so one wave may have no 'left').
     const events: BattleEvent[] = [];
-    for (let i = 0; i < 20000 && (sim.state.phase === 'spawning' || sim.state.phase === 'explaining'); i++) events.push(...sim.update(50));
+    for (let fromSeed = 1; fromSeed < 60; fromSeed += 12) {
+      const sim = simOffering('autoTurret', { planetId: planetIds('miss-add')[0], stats, modules: { hull: 3 } }, fromSeed);
+      sim.pickUpgrade('autoTurret');
+      for (let i = 0; i < 20000 && (sim.state.phase === 'spawning' || sim.state.phase === 'explaining'); i++) events.push(...advance(sim, 50));
+    }
     const kills = events.filter((e) => e.type === 'kill' && e.byTurret);
     expect(kills.length).toBeGreaterThan(0);
     for (const k of kills) if (k.type === 'kill') expect(k.enemy.fact.unknown).toBe('a');
+  });
+});
+
+describe('BattleSim armed enemies and hull (v6)', () => {
+  /** The first enemy, made armed, parked on the fire line (speed 0 so it never lands). */
+  function parkedArmed(sim: BattleSim): Enemy {
+    const e = firstSpawn(sim);
+    e.armed = true;
+    e.y = FIRE_LINE_Y;
+    e.speed = 0;
+    return e;
+  }
+  const hitsBy = (ev: BattleEvent[], id: number): BattleEvent[] =>
+    ev.filter((x) => x.type === 'shipHit' && x.enemy.id === id);
+
+  it('constants and helpers', () => {
+    expect(FIRE_LINE_Y).toBe(330);
+    expect(HULL_MAX).toBe(3);
+    expect(BOARDING_KILL_POINTS).toBe(10);
+    expect(BOARDING_CRAWLERS).toBe(8);
+    expect(ARMED_CHANCE).toEqual([0.25, 0.35, 0.45]);
+    expect([1, 2, 3, 4].map(armedChance)).toEqual([0.25, 0.35, 0.45, 0.45]);
+    expect(chargeMs(1)).toBe(4000);
+    expect(chargeMs(1.25)).toBe(3200);
+    expect(chargeMs()).toBe(4000);
+  });
+
+  it('starts with a full hull, no boardings, and spawns enemies with charge 0', () => {
+    const sim = new BattleSim(cfg());
+    expect(sim.state).toMatchObject({ hull: 3, hullMax: 3, boardings: 0 });
+    const e = firstSpawn(sim);
+    expect(e.charge).toBe(0);
+    expect(e.armed).toBe(false);
+  });
+
+  it('arms enemies with chance 0.25 / 0.35 / 0.45 per wave; the first enemy of a mission never', () => {
+    const armed = [0, 0, 0];
+    const total = [0, 0, 0];
+    for (let seed = 1; seed <= 150; seed++) {
+      const sim = new BattleSim(cfg({ seed }));
+      let first = true;
+      while (sim.state.phase !== 'won') {
+        const wave = sim.state.wave;
+        for (const x of clearWave(sim)) {
+          if (x.type !== 'spawn') continue;
+          if (first) {
+            expect(x.enemy.armed).toBe(false);
+            first = false;
+            continue;
+          }
+          total[wave - 1]++;
+          if (x.enemy.armed) armed[wave - 1]++;
+        }
+        if (sim.state.phase === 'waveCleared') sim.nextWave();
+      }
+    }
+    expect(total[0]).toBe(150 * 7);
+    for (let w = 0; w < 3; w++) expect(Math.abs(armed[w] / total[w] - ARMED_CHANCE[w])).toBeLessThan(0.05);
+  });
+
+  for (const scale of [1, 1.25]) {
+    it(`an armed enemy below the fire line charges for chargeMs(${scale}) and fires repeatedly`, () => {
+      const sim = new BattleSim(cfg({ speedScale: scale }));
+      const e = parkedArmed(sim);
+      const ms = chargeMs(scale);
+      let ev = sim.update(ms - 50);
+      expect(hitsBy(ev, e.id)).toEqual([]);
+      expect(e.charge).toBeCloseTo((ms - 50) / ms, 5);
+      ev = sim.update(50);
+      expect(hitsBy(ev, e.id)).toEqual([{ type: 'shipHit', enemy: e, hull: 2 }]);
+      expect(e.charge).toBe(0);
+      expect(sim.state.hull).toBe(2);
+      ev = sim.update(ms);
+      expect(hitsBy(ev, e.id)).toEqual([{ type: 'shipHit', enemy: e, hull: 1 }]);
+      expect(sim.state.phase).toBe('spawning');
+    });
+  }
+
+  it('does not charge above the fire line or when unarmed', () => {
+    const sim = new BattleSim(cfg());
+    const e = parkedArmed(sim);
+    e.y = FIRE_LINE_Y - 1;
+    sim.update(5000);
+    expect(e.charge).toBe(0);
+    e.y = FIRE_LINE_Y;
+    e.armed = false;
+    sim.update(5000);
+    expect(e.charge).toBe(0);
+    expect(sim.state.hull).toBe(HULL_MAX);
+  });
+
+  it('an enemy killed mid-charge never fires', () => {
+    const sim = new BattleSim(cfg());
+    const e = parkedArmed(sim);
+    sim.update(chargeMs() * 0.9);
+    expect(answer(sim, e.fact.answer)[0]).toMatchObject({ type: 'kill', enemy: { id: e.id } });
+    const ev = sim.update(chargeMs() * 2);
+    expect(hitsBy(ev, e.id)).toEqual([]);
+    expect(sim.state.hull).toBe(HULL_MAX);
+  });
+
+  it('charging is frozen while explaining', () => {
+    const sim = new BattleSim(cfg());
+    const e = parkedArmed(sim);
+    runUntil(sim, () => sim.state.enemies.length === 2);
+    const other = sim.state.enemies.find((x) => x.id !== e.id)!;
+    other.y = IMPACT_Y - 0.01;
+    sim.update(16);
+    expect(sim.state.phase).toBe('explaining');
+    const charge = e.charge;
+    expect(charge).toBeGreaterThan(0);
+    expect(sim.update(EXPLAIN_MS - 100).some((x) => x.type === 'shipHit')).toBe(false);
+    expect(e.charge).toBe(charge);
+  });
+
+  it('ship hits leave domes and streak alone; hull 0 breaches and freezes the sim in boarding', () => {
+    const sim = new BattleSim(cfg());
+    const e = parkedArmed(sim);
+    sim.state.streak = 5;
+    sim.state.hull = 1;
+    const domes = JSON.stringify(sim.state.domes);
+    sim.typeDigit(1);
+    const ev = runUntilRaw(sim, (x) => x.some((y) => y.type === 'breach'));
+    const i = ev.findIndex((x) => x.type === 'shipHit');
+    expect(ev.slice(i)).toEqual([{ type: 'shipHit', enemy: e, hull: 0 }, { type: 'breach' }]);
+    expect(sim.state).toMatchObject({ phase: 'boarding', hull: 0, streak: 5, input: '' });
+    expect(JSON.stringify(sim.state.domes)).toBe(domes);
+
+    const frozen = JSON.stringify(sim.state);
+    expect(sim.update(10_000)).toEqual([]);
+    sim.typeDigit(3);
+    sim.toggleSign();
+    sim.backspace();
+    expect(sim.submit()).toEqual([]);
+    expect(sim.nextWave()).toEqual([]);
+    expect(JSON.stringify(sim.state)).toBe(frozen);
+  });
+
+  /** update() without repelling, until the predicate holds. */
+  function runUntilRaw(sim: BattleSim, pred: (ev: BattleEvent[]) => boolean): BattleEvent[] {
+    const all: BattleEvent[] = [];
+    for (let t = 0; t < 60_000; t += 16) {
+      const ev = sim.update(16);
+      all.push(...ev);
+      if (pred(ev)) return all;
+    }
+    throw new Error('condition not reached');
+  }
+
+  function boardedSim(seed = 1): { sim: BattleSim; armed: Enemy } {
+    const sim = new BattleSim(cfg({ seed }));
+    const armed = parkedArmed(sim);
+    sim.state.hull = 1;
+    runUntilRaw(sim, (x) => x.some((y) => y.type === 'breach'));
+    return { sim, armed };
+  }
+
+  it('resolveBoarding repelled: records and kill points added, hull refilled, charges reset, play resumes', () => {
+    const { sim, armed } = boardedSim();
+    const records = [{ factId: 'type:3', outcome: 'fast' as const, responseMs: 900 }];
+    const before = { score: sim.state.score, kills: sim.state.kills, records: sim.records.length };
+    armed.charge = 0.7;
+    expect(sim.resolveBoarding({ repelled: true, records, kills: 4 })).toEqual([]);
+    expect(sim.state).toMatchObject({
+      phase: 'spawning', hull: HULL_MAX, boardings: 1, score: before.score + 40, kills: before.kills + 4,
+    });
+    expect(sim.records.slice(before.records)).toEqual(records);
+    expect(sim.state.enemies.every((x) => x.charge === 0)).toBe(true);
+    expect(sim.resolveBoarding({ repelled: true, records, kills: 4 })).toEqual([]);   // not boarding: no-op
+    expect(sim.state.boardings).toBe(1);
+    expect(sim.state.kills).toBe(before.kills + 4);
+    // the armed enemy fires again after a full charge
+    expect(hitsBy(sim.update(chargeMs()), armed.id)).toHaveLength(1);
+  });
+
+  it('resolveBoarding not repelled: the mission is lost', () => {
+    const { sim } = boardedSim();
+    expect(sim.resolveBoarding({ repelled: false, records: [], kills: 2 })).toEqual([{ type: 'lost' }]);
+    expect(sim.state).toMatchObject({ phase: 'lost', boardings: 0, kills: 2, score: 20 });
+    expect(sim.update(1000)).toEqual([]);
+  });
+
+  it('boardingFacts draws problems of the mission from the scheduler, deterministically', () => {
+    const a = boardedSim(7).sim;
+    const b = boardedSim(7).sim;
+    const facts = a.boardingFacts();
+    expect(facts).toHaveLength(BOARDING_CRAWLERS);
+    expect(facts.every((f) => f.op === 'type' && f.answer >= 0 && f.answer <= 9)).toBe(true);
+    expect(b.boardingFacts()).toEqual(facts);
+    expect(a.boardingFacts(3)).toHaveLength(3);
   });
 });

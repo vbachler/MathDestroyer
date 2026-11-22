@@ -3,7 +3,7 @@ import { numeralStyle } from '../ui/TextStyles';
 import { COLORS, CSS, LINE_WIDTH, SIZES } from '../ui/theme';
 import { hasImage, IMG } from './assets';
 import { TAG_GAP } from './battleLayout';
-import type { TagSide } from './battleLayout';
+import type { Point, TagSide } from './battleLayout';
 import { TEX } from './textures';
 
 /** 0 = far, 1 = approaching, 2 = about to hit. */
@@ -11,6 +11,10 @@ export type ThreatLevel = 0 | 1 | 2;
 
 const TAG_PAD_X = 9;
 const TAG_PAD_Y = 3;
+/** The aiming line shows in the last quarter of the charge. */
+const AIM_FROM_CHARGE = 0.75;
+/** Nose of the hull below the centre, as a fraction of the ship size (the nose points down). */
+const NOSE = 0.42;
 
 /** Visible hull width as a fraction of the 256 px frame (measured from the alpha of each image). */
 const HULL_WIDTH: Readonly<Record<string, number>> = {
@@ -31,6 +35,9 @@ export class EnemyShip extends Phaser.GameObjects.Container {
 
   private readonly hull: Phaser.GameObjects.Image;
   private readonly engine: Phaser.GameObjects.Image;
+  private readonly noseGlow: Phaser.GameObjects.Image;
+  private readonly aim: Phaser.GameObjects.Graphics;
+  private charge: number | null = null;
   private readonly hairline: Phaser.GameObjects.Graphics;
   private readonly plate: Phaser.GameObjects.Graphics;
   private readonly text: Phaser.GameObjects.Text;
@@ -50,6 +57,11 @@ export class EnemyShip extends Phaser.GameObjects.Container {
       .setTint(COLORS.danger)
       .setBlendMode(Phaser.BlendModes.ADD);
     this.hull = scene.add.image(0, 0, key);
+    this.noseGlow = scene.add.image(0, 0, TEX.glow)
+      .setTint(COLORS.danger)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setVisible(false);
+    this.aim = scene.add.graphics().setVisible(false);
 
     this.text = scene.add.text(0, 0, problem, numeralStyle({ fontSize: `${SIZES.problem}px`, color: CSS.text })).setOrigin(0.5);
     this.tagWidth = Math.ceil(this.text.width) + TAG_PAD_X * 2;
@@ -57,7 +69,7 @@ export class EnemyShip extends Phaser.GameObjects.Container {
     this.hairline = scene.add.graphics();
     this.plate = scene.add.graphics();
 
-    this.add([this.engine, this.hull, this.hairline, this.plate, this.text]);
+    this.add([this.aim, this.engine, this.hull, this.noseGlow, this.hairline, this.plate, this.text]);
     this.setShipSize(size);
     this.setTagSide('right');
     this.setThreat(0);
@@ -101,10 +113,49 @@ export class EnemyShip extends Phaser.GameObjects.Container {
     return this;
   }
 
+  /** Nose of the hull in view coordinates (where an armed ship's shot leaves). */
+  get nose(): Point {
+    return { x: this.x, y: this.y + this.size * NOSE };
+  }
+
+  /**
+   * Armed ship: `charge` 0..1 (null = unarmed). A red glow at the nose grows with the charge;
+   * in the last quarter a hairline red aiming line runs to `target` (the cockpit, view coords).
+   */
+  setCharge(charge: number | null, target: Point): this {
+    this.charge = charge;
+    if (charge === null) {
+      this.noseGlow.setVisible(false);
+      this.aim.setVisible(false);
+      return this;
+    }
+    const c = Math.min(1, Math.max(0, charge));
+    const flicker = 0.85 + 0.15 * Math.sin(this.glowPhase * 3.1);
+    this.noseGlow.setVisible(true)
+      .setPosition(0, this.size * NOSE)
+      .setScale((this.size * (0.35 + 1.1 * c)) / 128)
+      .setAlpha((0.35 + 0.6 * c) * flicker);
+    const g = this.aim;
+    if (c < AIM_FROM_CHARGE) {
+      g.setVisible(false);
+      return this;
+    }
+    const k = (c - AIM_FROM_CHARGE) / (1 - AIM_FROM_CHARGE);
+    g.clear().setVisible(true);
+    g.lineStyle(LINE_WIDTH, COLORS.danger, (0.25 + 0.55 * k) * flicker);
+    g.lineBetween(0, this.size * NOSE, target.x - this.x, target.y - this.y);
+    return this;
+  }
+
   /** Engine glow shimmer; call every frame. */
   tick(dtMs: number): void {
     this.glowPhase += dtMs * 0.012;
     this.engine.setAlpha(0.32 + 0.1 * Math.sin(this.glowPhase) + 0.05 * Math.sin(this.glowPhase * 2.7));
+    if (this.charge !== null) {
+      // A hot white core flickers in once the shot is close.
+      const c = this.charge;
+      this.noseGlow.setTint(c > 0.85 && Math.sin(this.glowPhase * 7) > 0 ? 0xffb0a0 : COLORS.danger);
+    }
   }
 
   /** Arrival: fades in while the hull drops into place. */

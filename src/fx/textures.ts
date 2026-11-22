@@ -13,6 +13,19 @@ export const TEX = {
   planetSmall: 'tex-planet-small', // 64x64 shaded white sphere (tint it)
   particle: 'tex-particle',       // 16x16 soft white spark
   laser: 'tex-laser',             // 12x128 vertical beam, white core (tint it)
+  vignette: 'tex-vignette',       // 256x256 clear centre, white edges (tint it, stretch to the screen)
+  crawlerScorpion: 'tex-crawler-scorpion', // 256x256 fallback crawlers, front view, feet at ~88 %
+  crawlerSpider: 'tex-crawler-spider',
+  crawlerCrab: 'tex-crawler-crab',
+  crawlerBeetle: 'tex-crawler-beetle',
+} as const;
+
+/** Fallback texture of each crawler kind (used when crawlers/<kind>.png is missing). */
+export const CRAWLER_FALLBACK = {
+  scorpion: TEX.crawlerScorpion,
+  spider: TEX.crawlerSpider,
+  crab: TEX.crawlerCrab,
+  beetle: TEX.crawlerBeetle,
 } as const;
 
 type GraphicsDraw = (g: Phaser.GameObjects.Graphics) => void;
@@ -119,6 +132,108 @@ function drawDome(g: Phaser.GameObjects.Graphics, state: 0 | 1 | 2): void {
   }
 }
 
+// ------------------------------------------------------------------ boarding fallbacks
+
+type CrawlerShape = keyof typeof CRAWLER_FALLBACK;
+
+const SHELL = '#2b2722';
+const SHELL_HI = 'rgba(190,170,140,0.55)';
+const LEG = '#1c1a17';
+
+function legPair(ctx: CanvasRenderingContext2D, x: number, y: number, reach: number, lift: number, drop: number, w: number): void {
+  ctx.strokeStyle = LEG;
+  ctx.lineWidth = w;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const dir of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(128 + dir * x, y);
+    ctx.lineTo(128 + dir * (x + reach * 0.55), y - lift);
+    ctx.lineTo(128 + dir * (x + reach), y + drop);
+    ctx.stroke();
+  }
+}
+
+function shell(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number): void {
+  const grad = ctx.createRadialGradient(cx - rx * 0.3, cy - ry * 0.5, 2, cx, cy, Math.max(rx, ry));
+  grad.addColorStop(0, '#5a5248');
+  grad.addColorStop(0.5, SHELL);
+  grad.addColorStop(1, '#0e0d0b');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = SHELL_HI;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx - 1, ry - 1, 0, Math.PI * 1.1, Math.PI * 1.9);
+  ctx.stroke();
+}
+
+function eyes(ctx: CanvasRenderingContext2D, y: number, spread: number, n: number): void {
+  for (let i = 0; i < n; i++) {
+    const x = 128 + (i - (n - 1) / 2) * spread;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 7);
+    g.addColorStop(0, 'rgba(255,120,90,1)');
+    g.addColorStop(0.35, 'rgba(255,60,40,0.8)');
+    g.addColorStop(1, 'rgba(255,40,20,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - 7, y - 7, 14, 14);
+  }
+}
+
+/** Code-drawn crawler, front view, dark chitin with red eye lights. Feet near y 226 of 256. */
+function drawCrawler(ctx: CanvasRenderingContext2D, kind: CrawlerShape): void {
+  switch (kind) {
+    case 'spider':
+      for (const [x, y, reach, lift, drop] of [[22, 150, 96, 70, 76], [26, 160, 90, 46, 66], [24, 170, 76, 22, 56], [18, 176, 58, 4, 50]]) {
+        legPair(ctx, x, y, reach, lift, drop, 5);
+      }
+      shell(ctx, 128, 132, 40, 34);
+      shell(ctx, 128, 172, 26, 20);
+      eyes(ctx, 168, 10, 4);
+      break;
+    case 'crab':
+      legPair(ctx, 52, 170, 60, 20, 56, 7);
+      legPair(ctx, 44, 178, 56, 8, 48, 7);
+      // Pincers raised.
+      for (const dir of [-1, 1]) {
+        ctx.strokeStyle = LEG; ctx.lineWidth = 10; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(128 + dir * 60, 160); ctx.lineTo(128 + dir * 98, 120); ctx.stroke();
+        shell(ctx, 128 + dir * 104, 104, 18, 24);
+      }
+      shell(ctx, 128, 160, 72, 38);
+      eyes(ctx, 140, 22, 2);
+      break;
+    case 'beetle':
+      legPair(ctx, 40, 176, 56, 16, 50, 7);
+      legPair(ctx, 46, 190, 50, 6, 36, 7);
+      shell(ctx, 128, 150, 62, 58);
+      ctx.strokeStyle = 'rgba(0,0,0,0.8)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(128, 96); ctx.lineTo(128, 206); ctx.stroke();
+      shell(ctx, 128, 196, 30, 16);
+      eyes(ctx, 198, 18, 2);
+      break;
+    case 'scorpion':
+    default:
+      legPair(ctx, 34, 178, 70, 24, 48, 6);
+      legPair(ctx, 30, 188, 60, 10, 38, 6);
+      // Tail arching over the body, sting forward.
+      ctx.strokeStyle = SHELL; ctx.lineWidth = 16; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(128, 170); ctx.quadraticCurveTo(128, 40, 128, 70); ctx.stroke();
+      ctx.fillStyle = '#8a2a20';
+      ctx.beginPath(); ctx.moveTo(120, 64); ctx.lineTo(136, 64); ctx.lineTo(128, 96); ctx.closePath(); ctx.fill();
+      for (const dir of [-1, 1]) {
+        ctx.strokeStyle = LEG; ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.moveTo(128 + dir * 30, 186); ctx.lineTo(128 + dir * 74, 170); ctx.stroke();
+        shell(ctx, 128 + dir * 84, 172, 16, 12);
+      }
+      shell(ctx, 128, 178, 44, 30);
+      eyes(ctx, 184, 14, 3);
+      break;
+  }
+}
+
 /** Creates every texture in TEX. Safe to call more than once (existing keys are kept). */
 export function generateTextures(scene: Phaser.Scene): void {
   const has = (k: string): boolean => scene.textures.exists(k);
@@ -154,6 +269,14 @@ export function generateTextures(scene: Phaser.Scene): void {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 12, 128);
   });
+
+  if (!has(TEX.vignette)) fromCanvas(scene, TEX.vignette, 256, 256, (ctx) =>
+    radial(ctx, 256, [[0, 'rgba(255,255,255,0)'], [0.45, 'rgba(255,255,255,0)'], [0.8, 'rgba(255,255,255,0.55)'],
+      [1, 'rgba(255,255,255,1)']]));
+
+  for (const [kind, key] of Object.entries(CRAWLER_FALLBACK) as Array<[CrawlerShape, string]>) {
+    if (!has(key)) fromCanvas(scene, key, 256, 256, (ctx) => drawCrawler(ctx, kind));
+  }
 
   if (!has(TEX.enemy)) fromGraphics(scene, TEX.enemy, 64, 64, (g) => drawEnemy(g, 0x5a2430, COLORS.danger));
   if (!has(TEX.enemyAlt)) fromGraphics(scene, TEX.enemyAlt, 64, 64, (g) => drawEnemyAlt(g, 0x4a2a1a, COLORS.accent));

@@ -652,6 +652,243 @@ export class Sfx {
     });
   }
 
+  // ================================================================== attack and boarding
+
+  /**
+   * An enemy ship fires on us: an alien weapon, unlike our guns. A ring-modulated chirp that
+   * flicks up (300 -> 1300 Hz in 50 ms; the charge itself is shown, not heard) and snaps down into a
+   * gritty zap (saw 1800 -> 120 Hz, tanh, resonant low-pass), with a hiss of ionised air.
+   */
+  enemyLaser(): void {
+    const v = this.begin(Prio.Weapon, 1.3, 0.35);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      const r = rnd(0.95, 1.05);
+      const rise = t + 0.05;
+      const end = rise + 0.45;
+      // Charging whine, ring-modulated by an inharmonic sine for an alien edge.
+      const whine = v.osc('sawtooth', 300 * r, t, rise + 0.03);
+      v.sweep(whine.frequency, t, 300 * r, 1300 * r, rise);
+      const ring = v.gain(0);
+      v.chain(v.osc('sine', 437 * r, t, rise + 0.03), ring.gain);
+      const wg = v.gain(0);
+      wg.gain.setValueAtTime(0.0001, t);
+      wg.gain.exponentialRampToValueAtTime(0.16, rise);
+      wg.gain.linearRampToValueAtTime(0, rise + 0.02);
+      v.chain(whine, ring, v.filter('bandpass', 1100, 1.2), wg, v.out);
+
+      // The shot: a falling saw through grit and a closing resonant low-pass.
+      const zap = v.osc('sawtooth', 1800 * r, rise, end);
+      v.sweep(zap.frequency, rise, 1800 * r, 120 * r, end - 0.05);
+      const lp = v.filter('lowpass', 5000, 9);
+      v.sweep(lp.frequency, rise, 5000, 300, end);
+      const zg = v.gain(0);
+      v.env(zg.gain, rise, 0.003, 0.3, end);
+      v.chain(zap, v.shaper(4), lp, zg, v.out);
+      v.send(zg, 0.5);
+
+      const hiss = v.gain(0);
+      v.env(hiss.gain, rise, 0.01, 0.12, end + 0.1);
+      v.chain(v.noise('white', rise, end + 0.15), v.filter('highpass', 2500, 0.7), hiss, v.out);
+    });
+  }
+
+  /**
+   * Our hull is hit: a heavy, close boom, the ship's metal ringing like a struck bell (low
+   * inharmonic partials ~110 Hz, long tail in the reverb), sparks crackling and a groan.
+   */
+  hullHit(): void {
+    const v = this.begin(Prio.Weapon, 1.1, 0.5);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      const r = rnd(0.94, 1.06);
+      this.boom(v, t, 70 * r, 24, 0.9, 0.8, 1100, 0.75);
+      this.debris(v, t + 0.03, 0.6, 1500, 4500, 1.1);
+      const bell = v.gain(1);
+      [0.09, 0.06, 0.035].forEach((amp, i) => {
+        const f = 112 * r * BAR_MODES[i];
+        const dec = [1.8, 1.2, 0.8][i];
+        const o = v.osc('sine', f, t, t + dec + 0.05);
+        v.sweep(o.frequency, t, f, f * 0.96, t + dec);
+        const g = v.gain(0);
+        v.env(g.gain, t, 0.004, amp, t + dec);
+        v.chain(o, g, bell);
+      });
+      bell.connect(v.out);
+      v.send(bell, 0.9);
+      const gs = t + 0.1;
+      const groan = v.osc('sawtooth', 64 * r, gs, gs + 1.1);
+      v.sweep(groan.frequency, gs, 64 * r, 41 * r, gs + 1.0);
+      const gg = v.gain(0);
+      v.env(gg.gain, gs, 0.2, 0.16, gs + 1.05);
+      v.chain(groan, v.filter('lowpass', 300, 5), gg, v.out);
+    });
+  }
+
+  /**
+   * Hull breached: a fast, frantic two-tone alarm (square + saw, 880 / 660 Hz, 6 pulses through
+   * a 1.6 kHz low-pass), under it the roar of venting air (noise swelling through an opening
+   * band) and metal tearing (saw bending 150 -> 60 Hz with random pitch jerks). About 2.2 s.
+   */
+  breachAlarm(): void {
+    const v = this.begin(Prio.Weapon, 1, 0.45);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      const end = t + 2.2;
+      const lp = v.filter('lowpass', 1600, 3);
+      const ag = v.gain(0);
+      const sq = v.osc('square', 880, t, end);
+      const sw = v.osc('sawtooth', 440, t, end);
+      v.chain(sq, v.gain(0.4), lp);
+      v.chain(sw, v.gain(0.6), lp);
+      for (let i = 0; i < 6; i++) {
+        const s = t + i * 0.3;
+        const f = i % 2 === 0 ? 880 : 660;
+        sq.frequency.setValueAtTime(f, s);
+        sw.frequency.setValueAtTime(f / 2, s);
+        ag.gain.setValueAtTime(0, s);
+        ag.gain.linearRampToValueAtTime(0.1, s + 0.01);
+        ag.gain.setValueAtTime(0.1, s + 0.22);
+        ag.gain.linearRampToValueAtTime(0, s + 0.26);
+      }
+      v.chain(lp, ag, v.out);
+
+      const vent = v.gain(0);
+      vent.gain.setValueAtTime(0.0001, t);
+      vent.gain.exponentialRampToValueAtTime(0.3, t + 0.5);
+      vent.gain.exponentialRampToValueAtTime(FLOOR, end);
+      const vbp = v.filter('bandpass', 400, 0.8);
+      v.sweep(vbp.frequency, t, 400, 2200, t + 0.6);
+      v.chain(v.noise('white', t, end + 0.05), vbp, vent, v.out);
+      v.send(vent, 0.5);
+
+      const tear = v.osc('sawtooth', 150, t, t + 1.3);
+      for (let s = t; s < t + 1.2; s += rnd(0.03, 0.09)) tear.frequency.setValueAtTime(rnd(60, 150) * (1 - (s - t) / 2.4), s);
+      const tg = v.gain(0);
+      v.env(tg.gain, t, 0.05, 0.22, t + 1.25);
+      v.chain(tear, v.shaper(3), v.filter('lowpass', 900, 6), tg, v.out);
+    });
+  }
+
+  /**
+   * Legs on the deck plates: a short run of hard chitin clicks (2-6 ms noise grains, 2-6 kHz)
+   * over soft thumps. The boarding scene calls it repeatedly; `level` 0..1 follows the nearest
+   * crawler (louder, denser, drier as it closes in).
+   */
+  skitter(level: number): void {
+    const lv = Math.min(1, Math.max(0, level));
+    if (lv < 0.03) return;
+    const v = this.begin(Prio.Ui, 0.25 + 0.75 * lv, 0.45 * (1 - lv) + 0.08);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      const len = 0.2;
+      const clicks = v.gain(0);
+      const bp = v.filter('bandpass', 3500, 4);
+      v.chain(v.noise('white', t, t + len + 0.03), bp, v.filter('lowpass', 2500 + 4000 * lv, 0), clicks, v.out);
+      const n = Math.round(4 + 8 * lv);
+      for (let i = 0; i < n; i++) {
+        const s = t + rnd(0, len);
+        bp.frequency.setValueAtTime(rnd(2000, 6000), s);
+        v.grain(clicks.gain, s, rnd(0.15, 0.4), rnd(0.002, 0.006));
+      }
+      const thump = v.gain(0);
+      v.chain(v.noise('brown', t, t + len + 0.03), v.filter('lowpass', 220, 0), thump, v.out);
+      for (let s = t; s < t + len; s += rnd(0.05, 0.09)) v.grain(thump.gain, s, rnd(0.2, 0.4) * lv, 0.03);
+    });
+  }
+
+  /**
+   * A crawler screams: a longer, rawer version of the machine shriek (two detuned FM voices,
+   * strong grit, formants sliding down), 0.5-0.8 s. `level` 0..1.
+   */
+  screech(level = 1): void {
+    const v = this.begin(Prio.Normal, 0.75 * Math.min(1, Math.max(0, level)), 0.5);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      const dur = rnd(0.5, 0.8);
+      const end = t + dur;
+      const f0 = rnd(700, 1100);
+      const shr = v.gain(0);
+      v.env(shr.gain, t, 0.04, 0.22, end);
+      for (const det of [1, 1.07]) {
+        const car = v.osc('sawtooth', f0 * det, t, end + 0.05);
+        v.sweep(car.frequency, t, f0 * det, f0 * det * rnd(0.35, 0.5), end);
+        const mod = v.osc('sine', f0 * 1.41 * det, t, end + 0.05);
+        const depth = v.gain(f0 * 0.8);
+        v.chain(mod, depth, car.frequency);
+        v.chain(v.osc('triangle', rnd(23, 37), t, end + 0.05), v.gain(80), car.detune);
+        car.connect(shr);
+      }
+      const bp = v.filter('bandpass', 1600, 3);
+      v.sweep(bp.frequency, t, rnd(1500, 2200), rnd(500, 800), end);
+      v.chain(shr, v.shaper(3), bp, v.filter('lowpass', 4200, 0), v.out);
+    });
+  }
+
+  /**
+   * The hangar guns: lighter and quicker than the ship's main guns, two barrels a few ms apart.
+   * Each: a crack, a short body (saw 1400 -> 160 Hz in 0.14 s, grit, closing low-pass) and a thump.
+   */
+  turretShot(): void {
+    const v = this.begin(Prio.Weapon, 1.2, 0.25);
+    if (!v) return;
+    this.safely(() => {
+      for (const [dt, r] of [[0, rnd(0.96, 1.04)], [rnd(0.012, 0.025), rnd(0.9, 0.96)]] as const) {
+        const t = v.t0 + dt;
+        const crack = v.gain(0);
+        v.env(crack.gain, t, 0.001, 0.35, t + 0.03);
+        v.chain(v.noise('white', t, t + 0.04), v.filter('bandpass', 2600 * r, 0.9), crack, v.out);
+        const saw = v.osc('sawtooth', 1400 * r, t, t + 0.2);
+        v.sweep(saw.frequency, t, 1400 * r, 160 * r, t + 0.14);
+        const lp = v.filter('lowpass', 4000, 6);
+        v.sweep(lp.frequency, t, 4000, 300, t + 0.16);
+        const body = v.gain(0);
+        v.env(body.gain, t, 0.002, 0.2, t + 0.18);
+        v.chain(saw, v.shaper(2.5), lp, body, v.out);
+        const sub = v.osc('sine', 90 * r, t, t + 0.16);
+        v.sweep(sub.frequency, t, 90 * r, 45, t + 0.14);
+        const sg = v.gain(0);
+        v.env(sg.gain, t, 0.004, 0.3, t + 0.15);
+        v.chain(sub, sg, v.out);
+      }
+    });
+  }
+
+  /**
+   * A crawler gets us: a screech cut short by a wet crunch (dense low noise grains 150-900 Hz
+   * under a closing low-pass), a body thump and a ringing in the ears (quiet 3.1 kHz sine).
+   */
+  bite(): void {
+    const v = this.begin(Prio.Weapon, 1.2, 0.35);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      this.shriek(v, t);
+      const c = t + 0.12;
+      const crunch = v.gain(0);
+      const bp = v.filter('bandpass', 500, 2);
+      const lp = v.filter('lowpass', 2500, 1);
+      v.sweep(lp.frequency, c, 2500, 400, c + 0.4);
+      v.chain(v.noise('brown', c, c + 0.45), bp, lp, crunch, v.out);
+      for (let s = c; s < c + 0.38;) {
+        const len = rnd(0.01, 0.035);
+        bp.frequency.setValueAtTime(rnd(150, 900), s);
+        v.grain(crunch.gain, s, rnd(0.5, 1.0) * (1 - (s - c) / 0.45), len);
+        s += len + rnd(0.002, 0.02);
+      }
+      this.boom(v, c, 90, 30, 0.45, 0.8, 600, 0.5);
+      const ring = v.osc('sine', 3100, c + 0.05, c + 1.6);
+      const rg = v.gain(0);
+      v.env(rg.gain, c + 0.05, 0.1, 0.018, c + 1.55);
+      v.chain(ring, rg, v.out);
+    });
+  }
+
   // ================================================================== layers
 
   /**

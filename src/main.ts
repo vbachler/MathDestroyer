@@ -10,6 +10,7 @@ import '@fontsource/rajdhani/latin-ext-700.css';
 import '@fontsource/share-tech-mono/latin-400.css';
 import Phaser from 'phaser';
 import { BattleScene } from './scenes/BattleScene';
+import { BoardingScene } from './scenes/BoardingScene';
 import { BootScene } from './scenes/BootScene';
 import { FtlScene } from './scenes/FtlScene';
 import { MasteryScene } from './scenes/MasteryScene';
@@ -35,7 +36,7 @@ const config: Phaser.Types.Core.GameConfig = {
   input: { activePointers: 3 },
   scene: [
     BootScene, MenuScene, StarMapScene, StationScene, MasteryScene,
-    SettingsScene, FtlScene, BattleScene, UpgradeScene, ResultsScene,
+    SettingsScene, FtlScene, BattleScene, UpgradeScene, BoardingScene, ResultsScene,
   ],
 };
 

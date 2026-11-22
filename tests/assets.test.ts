@@ -3,18 +3,22 @@ import { PLANETS, SECTORS } from '../src/core/content';
 import { UPGRADES } from '../src/core/upgrades';
 import { MODULES } from '../src/core/economy';
 import {
-  ASSET_URLS, IMG, battleBgFor, enemyImageFor, iconFor, planetImageFor, voiceUrlFor,
+  ASSET_URLS, IMG, SHEET_URLS, battleBgFor, crawlerImageFor, crawlerWalkFor, enemyImageFor, iconFor, planetImageFor, voiceUrlFor,
 } from '../src/fx/assets';
 
 describe('asset helpers', () => {
   it('every texture key has a URL under assets/', () => {
     const keys = [
-      ...Object.values(IMG.bg), IMG.ui.dash, ...Object.values(IMG.ships), ...IMG.planets,
+      ...Object.values(IMG.bg), IMG.ui.dash, ...Object.values(IMG.crawlers), ...Object.values(IMG.ships), ...IMG.planets,
       ...Object.values(IMG.portraits), ...Object.values(IMG.icons),
     ];
     expect(Object.keys(ASSET_URLS).sort()).toEqual([...keys].sort());
     expect(ASSET_URLS[IMG.icons.headStart]).toBe('assets/icons/headStart.jpg');
     expect(ASSET_URLS[IMG.ui.dash]).toBe('assets/ui/dash.png');
+    expect(ASSET_URLS[IMG.bg.hangar]).toBe('assets/bg/bg_hangar.jpg');
+    expect(ASSET_URLS[crawlerImageFor('spider')]).toBe('assets/crawlers/spider.png');
+    expect(SHEET_URLS[crawlerWalkFor('crab')]).toBe('assets/crawlers/crab_walk.png');
+    expect(Object.keys(SHEET_URLS).sort()).toEqual(Object.values(IMG.crawlerWalk).sort());
   });
 
   it('planetImageFor is stable and uses one of the eight pictures', () => {

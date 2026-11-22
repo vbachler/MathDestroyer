@@ -19,9 +19,24 @@ export const IMG = {
     bridge: 'bg_bridge',
     ftl: 'bg_ftl',
     station: 'station_shop_bg',
+    hangar: 'bg_hangar',
   },
   ui: {
     dash: 'ui_dash',            // 1920 px wide dashboard strip, transparent above the console
+  },
+  /** Boarding crawlers by kind, 512x512 with transparency (front view). */
+  crawlers: {
+    scorpion: 'crawler_scorpion',
+    spider: 'crawler_spider',
+    crab: 'crawler_crab',
+    beetle: 'crawler_beetle',
+  },
+  /** Walk cycles: 4x4 spritesheets of 256 px cells, 16 frames looping (crawlers/<kind>_walk.png). */
+  crawlerWalk: {
+    scorpion: 'crawler_scorpion_walk',
+    spider: 'crawler_spider_walk',
+    crab: 'crawler_crab_walk',
+    beetle: 'crawler_beetle_walk',
   },
   ships: {
     enemyA: 'ship_enemy_a',
@@ -58,11 +73,21 @@ const ENEMY_SHIPS = [IMG.ships.enemyA, IMG.ships.enemyB, IMG.ships.enemyC] as co
 export const ASSET_URLS: Readonly<Record<string, string>> = {
   ...Object.fromEntries(Object.values(IMG.bg).map((k) => [k, `assets/bg/${k}.jpg`])),
   [IMG.ui.dash]: 'assets/ui/dash.png',
+  ...Object.fromEntries(Object.entries(IMG.crawlers).map(([kind, k]) => [k, `assets/crawlers/${kind}.png`])),
   ...Object.fromEntries(Object.values(IMG.ships).map((k) => [k, `assets/ships/${k}.png`])),
   ...Object.fromEntries(IMG.planets.map((k) => [k, `assets/planets/${k}.png`])),
   ...Object.fromEntries(Object.values(IMG.portraits).map((k) => [k, `assets/portraits/${k}.jpg`])),
   ...Object.fromEntries(Object.entries(IMG.icons).map(([id, k]) => [k, `assets/icons/${id}.jpg`])),
 };
+
+/** Walk-cycle sheet geometry (tools/process-art.mjs). */
+export const WALK_FRAMES = 16;
+export const WALK_CELL = 256;
+
+/** Spritesheet texture key -> URL; loaded with WALK_CELL frames. */
+export const SHEET_URLS: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(IMG.crawlerWalk).map(([kind, k]) => [k, `assets/crawlers/${kind}_walk.png`]),
+);
 
 /** Written by `npm run art`: the image files that exist under public/assets/. */
 export const MANIFEST_URL = 'assets/manifest.json';
@@ -80,16 +105,21 @@ const isManifest = (v: unknown): v is AssetManifest =>
  */
 export function preloadAssets(scene: Phaser.Scene): void {
   const urlToKey = new Map(Object.entries(ASSET_URLS).map(([k, url]) => [url, k]));
+  const urlToSheet = new Map(Object.entries(SHEET_URLS).map(([k, url]) => [url, k]));
   scene.load.json(MANIFEST_KEY, MANIFEST_URL);
   scene.load.once(`filecomplete-json-${MANIFEST_KEY}`, (_key: string, _type: string, data: unknown) => {
     if (!isManifest(data)) return;
     for (const url of data.images) {
       const key = urlToKey.get(url);
       if (key && !scene.textures.exists(key)) scene.load.image(key, url);
+      const sheet = urlToSheet.get(url);
+      if (sheet && !scene.textures.exists(sheet)) {
+        scene.load.spritesheet(sheet, url, { frameWidth: WALK_CELL, frameHeight: WALK_CELL });
+      }
     }
   });
   scene.load.once('complete', () => {
-    const missing = Object.keys(ASSET_URLS).filter((k) => !scene.textures.exists(k));
+    const missing = [...Object.keys(ASSET_URLS), ...Object.keys(SHEET_URLS)].filter((k) => !scene.textures.exists(k));
     if (missing.length > 0) {
       console.warn(`[assets] ${missing.length} image(s) missing, scenes will use fallbacks: ${missing.join(', ')}`);
     }
@@ -116,6 +146,19 @@ export function battleBgFor(planetId: string): string {
 /** Enemy hull by enemy id % 3. */
 export function enemyImageFor(enemyId: number): string {
   return ENEMY_SHIPS[((enemyId % ENEMY_SHIPS.length) + ENEMY_SHIPS.length) % ENEMY_SHIPS.length];
+}
+
+/** Crawler kinds (the same union as core/boarding's CrawlerKind). */
+export type CrawlerImageKind = keyof typeof IMG.crawlers;
+
+/** Image of a boarding crawler; check hasImage() and use the procedural fallback (fx/textures) when missing. */
+export function crawlerImageFor(kind: CrawlerImageKind): string {
+  return IMG.crawlers[kind];
+}
+
+/** Walk-cycle spritesheet of a crawler kind (check hasImage(); fall back to the still). */
+export function crawlerWalkFor(kind: CrawlerImageKind): string {
+  return IMG.crawlerWalk[kind];
 }
 
 /** Card picture for an upgrade or station module id (falls back to the shield icon for unknown ids). */

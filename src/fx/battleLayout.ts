@@ -121,6 +121,9 @@ export function stationRect(x: number): Rect {
 export const GUN_LEFT: Point = { x: 18, y: VIEW_H - 14 };
 export const GUN_RIGHT: Point = { x: VIEW_W - 18, y: VIEW_H - 14 };
 
+/** Where enemy shots hit us: the cockpit glass just above the centre of the console hood. */
+export const COCKPIT: Point = { x: VIEW_W / 2, y: 596 };
+
 /** Small pause glyph button, top-right. */
 export const PAUSE_RECT: Rect = { x: VIEW_W - 44, y: 8, w: 36, h: 36 };
 
