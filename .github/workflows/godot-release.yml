@@ -1,0 +1,68 @@
+name: Godot Windows build
+
+# Builds build/MathDestroyer.exe from godot/.
+# - every push to main that touches godot/: build + downloadable artifact (Actions tab)
+# - a tag v* (e.g. git tag v1.0.0 && git push origin v1.0.0): also a GitHub Release with the exe
+on:
+  push:
+    branches: [main]
+    paths: ['godot/**', '.github/workflows/godot-release.yml']
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot and export templates
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-windows
+
+      - name: Install Godot and Windows templates
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
+          mkdir -p ~/godot && cd ~/godot
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && rm godot.zip && mv Godot_v*linux.x86_64 godot
+          curl -sSL -o tpl.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          t=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$t"
+          unzip -q -j tpl.tpz templates/version.txt 'templates/windows_*_x86_64*' -d "$t"
+          rm tpl.tpz
+
+      - name: Import project
+        run: ~/godot/godot --headless --path godot --import || true
+
+      - name: Godot tests
+        run: timeout 600 ~/godot/godot --headless --path godot -s res://tests/run_tests.gd
+
+      - name: Export Windows exe
+        run: |
+          mkdir -p build
+          ~/godot/godot --headless --path godot --export-release "Windows Desktop" ../build/MathDestroyer.exe
+          test -s build/MathDestroyer.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MathDestroyer-windows
+          path: build/MathDestroyer.exe
+
+      - name: GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" build/MathDestroyer.exe --title "MathDestroyer ${GITHUB_REF_NAME}" --notes "Windows build (Godot ${GODOT_VERSION})."
