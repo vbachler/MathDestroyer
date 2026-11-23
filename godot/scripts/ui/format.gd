@@ -14,5 +14,8 @@ static func multiplier_text(i18n: I18n, v: float) -> String:
 
 ## Milliseconds as seconds with one decimal and the locale's decimal separator ("2,4 s").
 static func seconds_text(i18n: I18n, ms: float) -> String:
-	var value := ("%.1f" % (ms / 1000.0)).replace(".", i18n.t("common.decimalSeparator"))
+	# Rounds half up like JS toFixed(1); "%.1f" uses the C library, which rounds 1.25 to 1.2 on Linux.
+	var tenths := int(floor(absf(ms) / 100.0 + 0.5))
+	var sign := "-" if ms < 0 and tenths > 0 else ""
+	var value := ("%s%d.%d" % [sign, tenths / 10, tenths % 10]).replace(".", i18n.t("common.decimalSeparator"))
 	return i18n.t("meta.mastery.seconds", {"value": value})
