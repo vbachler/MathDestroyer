@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   APPROACH_MS, BOARDING_CRAWLERS, BOARDING_FIRST_SPAWN_MS, BOARDING_MAX_ALIVE, BOARDING_MAX_BITES,
-  BOARDING_SPAWN_MS, BoardingSim, CRAWLER_SPEED, LANE_GAP_Z,
+  BOARDING_SPAWN_MS, BoardingSim, CRAWLER_KINDS, CRAWLER_SPEED, LANE_GAP_Z, boardingMaxAlive,
 } from '../src/core/boarding';
 import type { BoardingEvent, Crawler } from '../src/core/boarding';
 import { makeFact } from '../src/core/factgen';
@@ -11,7 +11,7 @@ import type { Fact } from '../src/core/types';
 /** Digits 0..7: eight problems with distinct answers. */
 const DIGITS: Fact[] = sectorFacts('type-1').slice(0, BOARDING_CRAWLERS);
 
-const make = (over: { facts?: Fact[]; seed?: number; speedScale?: number } = {}): BoardingSim =>
+const make = (over: { facts?: Fact[]; seed?: number; speedScale?: number; density?: number } = {}): BoardingSim =>
   new BoardingSim({ facts: DIGITS, seed: 1, speedScale: 1, ...over });
 
 function answer(sim: BoardingSim, n: number): BoardingEvent[] {
@@ -47,7 +47,9 @@ function wrongDigit(sim: BoardingSim): number {
 
 describe('BoardingSim setup and pacing', () => {
   it('constants', () => {
-    expect(CRAWLER_SPEED).toEqual({ scorpion: 1, spider: 1.2, crab: 0.85, beetle: 1 });
+    expect(CRAWLER_SPEED).toEqual({
+      scorpion: 1, spider: 1.2, crab: 0.85, beetle: 1, stalker: 1.15, drifter: 0.9, wraith: 0.8,
+    });
     expect([BOARDING_CRAWLERS, BOARDING_MAX_ALIVE, BOARDING_MAX_BITES]).toEqual([8, 3, 3]);
     expect([APPROACH_MS, BOARDING_SPAWN_MS, BOARDING_FIRST_SPAWN_MS]).toEqual([11000, 2600, 1200]);
   });
@@ -60,7 +62,7 @@ describe('BoardingSim setup and pacing', () => {
     expect(sim.records).toEqual([]);
   });
 
-  for (const scale of [0.75, 1, 1.25]) {
+  for (const scale of [0.5, 0.75, 1, 1.25]) {
     it(`first crawler after 1200 ms at the far door, then every 2600 / ${scale} ms, speed by kind`, () => {
       const sim = make({ speedScale: scale });
       expect(sim.step(BOARDING_FIRST_SPAWN_MS - 1)).toEqual([]);
@@ -98,18 +100,72 @@ describe('BoardingSim setup and pacing', () => {
     }
   });
 
+  it('density: max alive 2 below 1, otherwise 3', () => {
+    expect([0.5, 0.75, 1, 1.25].map((d) => boardingMaxAlive(d))).toEqual([2, 2, 3, 3]);
+    expect(boardingMaxAlive()).toBe(BOARDING_MAX_ALIVE);
+  });
+
+  for (const density of [0.5, 0.75, 1, 1.25]) {
+    for (const scale of [0.5, 1]) {
+      it(`density ${density}, speed ${scale}: spawn every 2600 / (speed * density) ms`, () => {
+        const sim = make({ density, speedScale: scale });
+        expect(sim.step(BOARDING_FIRST_SPAWN_MS).some((x) => x.type === 'spawn')).toBe(true);
+        const interval = BOARDING_SPAWN_MS / scale / density;
+        expect(sim.step(interval - 10).some((x) => x.type === 'spawn')).toBe(false);
+        expect(sim.step(10).find((x) => x.type === 'spawn')).toMatchObject({ crawler: { id: 2 } });
+      });
+    }
+
+    it(`density ${density}: never more than ${boardingMaxAlive(density)} alive, all 8 crawlers come`, () => {
+      const cap = boardingMaxAlive(density);
+      for (let seed = 1; seed <= 10; seed++) {
+        const sim = make({ seed, density });
+        let peak = 0;
+        let spawns = 0;
+        for (let i = 0; i < 10000 && sim.state.phase === 'fighting'; i++) {
+          for (const e of sim.step(16)) if (e.type === 'spawn') spawns++;
+          expect(sim.state.crawlers.length).toBeLessThanOrEqual(cap);
+          peak = Math.max(peak, sim.state.crawlers.length);
+          if (sim.state.crawlers.length === cap) answer(sim, nearest(sim).fact.answer);
+        }
+        expect(peak).toBe(cap);
+        expect(spawns).toBe(BOARDING_CRAWLERS);
+        expect(sim.state.phase).toBe('repelled');
+      }
+    });
+  }
+
+  it('density: an invalid value falls back to 1', () => {
+    for (const density of [Number.NaN, 0, -2]) {
+      const sim = make({ density });
+      sim.step(BOARDING_FIRST_SPAWN_MS);
+      expect(sim.step(BOARDING_SPAWN_MS).some((x) => x.type === 'spawn')).toBe(true);
+    }
+  });
+
   it('uses every kind and every lane over a few seeds', () => {
-    const kinds = new Set<string>();
+    const kinds = new Map<string, number>();
     const lanes = new Set<number>();
-    for (let seed = 1; seed <= 10; seed++) {
+    for (let seed = 1; seed <= 60; seed++) {
       const sim = make({ seed });
       for (let i = 0; i < 5000 && sim.state.phase === 'fighting'; i++) {
-        for (const e of sim.step(16)) if (e.type === 'spawn') { kinds.add(e.crawler.kind); lanes.add(e.crawler.lane); }
+        for (const e of sim.step(16)) {
+          if (e.type !== 'spawn') continue;
+          kinds.set(e.crawler.kind, (kinds.get(e.crawler.kind) ?? 0) + 1);
+          lanes.add(e.crawler.lane);
+        }
         if (sim.state.crawlers.length === BOARDING_MAX_ALIVE) answer(sim, nearest(sim).fact.answer);
       }
     }
-    expect(kinds.size).toBe(4);
+    expect([...kinds.keys()].sort()).toEqual([...CRAWLER_KINDS].sort());
     expect(lanes.size).toBe(3);
+    // Equally likely: every kind near 1/7 of the spawns.
+    const total = [...kinds.values()].reduce((a, b) => a + b, 0);
+    for (const n of kinds.values()) expect(Math.abs(n / total - 1 / CRAWLER_KINDS.length)).toBeLessThan(0.06);
+  });
+
+  it('has seven kinds', () => {
+    expect(CRAWLER_KINDS).toEqual(['scorpion', 'spider', 'crab', 'beetle', 'stalker', 'drifter', 'wraith']);
   });
 
   it('lane spacing: two crawlers on one lane are never closer than 0.25 in z', () => {

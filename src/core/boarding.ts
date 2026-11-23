@@ -8,15 +8,20 @@ import type { Fact } from './types';
 
 export { BOARDING_CRAWLERS };
 
-export type CrawlerKind = 'scorpion' | 'spider' | 'crab' | 'beetle';
-export const CRAWLER_KINDS: readonly CrawlerKind[] = ['scorpion', 'spider', 'crab', 'beetle'];
+export type CrawlerKind = 'scorpion' | 'spider' | 'crab' | 'beetle' | 'stalker' | 'drifter' | 'wraith';
+/** Every kind, all equally likely at spawn. */
+export const CRAWLER_KINDS: readonly CrawlerKind[] = ['scorpion', 'spider', 'crab', 'beetle', 'stalker', 'drifter', 'wraith'];
 /** Speed factor per kind (z per second = factor * speedScale * 1000 / APPROACH_MS). */
-export const CRAWLER_SPEED: Record<CrawlerKind, number> = { scorpion: 1, spider: 1.2, crab: 0.85, beetle: 1 };
+export const CRAWLER_SPEED: Record<CrawlerKind, number> = {
+  scorpion: 1, spider: 1.2, crab: 0.85, beetle: 1, stalker: 1.15, drifter: 0.9, wraith: 0.8,
+};
 export const BOARDING_MAX_ALIVE = 3;
+/** Crawlers alive at once for a density: 2 below 1, otherwise BOARDING_MAX_ALIVE. */
+export const boardingMaxAlive = (density = 1): number => (density < 1 ? 2 : BOARDING_MAX_ALIVE);
 export const BOARDING_MAX_BITES = 3;
 /** Time for z 1 -> 0 at speed factor 1 and speedScale 1. */
 export const APPROACH_MS = 11000;
-/** Interval between spawns at speedScale 1 (divided by speedScale). */
+/** Interval between spawns at speedScale 1 and density 1 (divided by speedScale and density). */
 export const BOARDING_SPAWN_MS = 2600;
 /** Delay before the first crawler (not scaled, like the battle's wave start delay). */
 export const BOARDING_FIRST_SPAWN_MS = 1200;
@@ -41,7 +46,11 @@ export type BoardingEvent =
   | { type: 'wrong'; typed: number } | { type: 'bite'; crawler: Crawler }
   | { type: 'repelled' } | { type: 'overrun' };
 
-export interface BoardingConfig { facts: Fact[]; seed: number; speedScale: number; }
+export interface BoardingConfig {
+  facts: Fact[]; seed: number; speedScale: number;
+  /** settings.density, default 1: spawn interval / density, max alive boardingMaxAlive(density). */
+  density?: number;
+}
 
 /** Nearest crawler = smallest z (ties: oldest id). */
 function nearest(crawlers: Crawler[]): Crawler | undefined {
@@ -56,6 +65,8 @@ export class BoardingSim {
 
   private readonly rng: Rng;
   private readonly speedScale: number;
+  private readonly density: number;
+  private readonly maxAlive: number;
   private readonly facts: Fact[];
   private spawnTimerMs = BOARDING_FIRST_SPAWN_MS;
   private nextId = 1;
@@ -67,6 +78,9 @@ export class BoardingSim {
   constructor(cfg: BoardingConfig) {
     this.rng = createRng(cfg.seed);
     this.speedScale = Number.isFinite(cfg.speedScale) && cfg.speedScale > 0 ? cfg.speedScale : 1;
+    const d = cfg.density ?? 1;
+    this.density = Number.isFinite(d) && d > 0 ? d : 1;
+    this.maxAlive = boardingMaxAlive(this.density);
     this.facts = cfg.facts.slice();
     this.state = {
       phase: 'fighting',
@@ -107,7 +121,7 @@ export class BoardingSim {
     const s = this.state;
     if (s.remaining <= 0) return;
     this.spawnTimerMs = Math.max(0, this.spawnTimerMs - dt);
-    if (this.spawnTimerMs > 0 || s.crawlers.length >= BOARDING_MAX_ALIVE) return;
+    if (this.spawnTimerMs > 0 || s.crawlers.length >= this.maxAlive) return;
     this.pendingKind ??= this.rng.pick(CRAWLER_KINDS);
     const kind = this.pendingKind;
     const speed = (CRAWLER_SPEED[kind] * this.speedScale * 1000) / APPROACH_MS;
@@ -125,7 +139,7 @@ export class BoardingSim {
     this.pendingKind = null;
     s.remaining--;
     s.crawlers.push(crawler);
-    this.spawnTimerMs = BOARDING_SPAWN_MS / this.speedScale;
+    this.spawnTimerMs = BOARDING_SPAWN_MS / this.speedScale / this.density;
     ev.push({ type: 'spawn', crawler });
   }
 

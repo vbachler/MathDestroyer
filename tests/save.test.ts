@@ -5,7 +5,7 @@ import { BOX_INTERVAL_MS, PLANET_INTERVAL_MS, planetMastery, sectorKnowledge } f
 import { createRng } from '../src/core/rng';
 import { createMissionScheduler, missionSectors } from '../src/core/scheduler';
 import { callFor, sectorCalls } from '../src/core/story';
-import { SAVE_KEY, applyMission, defaultLocation, defaultSave, loadSave, migrate, writeSave } from '../src/core/save';
+import { DENSITIES, GAME_SPEEDS, SAVE_KEY, applyMission, defaultLocation, defaultSave, loadSave, migrate, writeSave } from '../src/core/save';
 import type { StorageAdapter } from '../src/core/save';
 import { NOW, planetIds, progress, stat } from './helpers';
 
@@ -66,7 +66,7 @@ describe('save', () => {
     expect(m.credits).toBe(0);
     expect(m.modules).toEqual({ hull: 2 });
     expect(m.stats).toEqual({ 'mul:7x8': { box: 5, attempts: 2, correct: 0, avgMs: 0, lastSeen: 0, dueAt: 0 } });
-    expect(m.settings).toEqual({ sfxVolume: 1, musicVolume: 0.6, keypadAlwaysVisible: false, gameSpeed: 1 });
+    expect(m.settings).toEqual({ sfxVolume: 1, musicVolume: 0.6, keypadAlwaysVisible: false, gameSpeed: 1, density: 1 });
     expect(m.totals).toEqual({ missions: 0, wins: 0, bestScore: {} });
     expect(m.planets).toEqual({});
   });
@@ -96,15 +96,34 @@ describe('save', () => {
     const loaded = loadSave(memory(JSON.stringify(old)));
     expect(loaded.settings.gameSpeed).toBe(1);
     expect(loaded.settings.keypadAlwaysVisible).toBe(true);
-    for (const v of [0.75, 1, 1.25]) {
+    expect(GAME_SPEEDS).toEqual([0.5, 0.75, 1, 1.25]);
+    for (const v of GAME_SPEEDS) {
       expect(migrate({ version: 1, settings: { gameSpeed: v } }).settings.gameSpeed).toBe(v);
     }
-    for (const v of [0.5, 2, '1', null, Number.NaN]) {
+    for (const v of [0.25, 0.6, 2, '1', null, Number.NaN]) {
       expect(migrate({ version: 1, settings: { gameSpeed: v } }).settings.gameSpeed).toBe(1);
     }
     const store = memory();
-    writeSave(store, { ...defaultSave(), settings: { ...defaultSave().settings, gameSpeed: 1.25 } });
-    expect(loadSave(store).settings.gameSpeed).toBe(1.25);
+    writeSave(store, { ...defaultSave(), settings: { ...defaultSave().settings, gameSpeed: 0.5 } });
+    expect(loadSave(store).settings.gameSpeed).toBe(0.5);
+  });
+
+  it('density: default 1, filled for older saves, valid values kept, others reset to 1', () => {
+    expect(DENSITIES).toEqual([0.5, 0.75, 1, 1.25]);
+    expect(defaultSave().settings.density).toBe(1);
+    const old = { ...defaultSave(), settings: { sfxVolume: 0.5, musicVolume: 0.5, keypadAlwaysVisible: true, gameSpeed: 0.75 } };
+    const loaded = loadSave(memory(JSON.stringify(old)));
+    expect(loaded.settings.density).toBe(1);
+    expect(loaded.settings.gameSpeed).toBe(0.75);
+    for (const v of DENSITIES) {
+      expect(migrate({ version: 1, settings: { density: v } }).settings.density).toBe(v);
+    }
+    for (const v of [0, 0.25, 1.5, -1, '0.5', null, undefined, Number.NaN, Infinity, {}]) {
+      expect(migrate({ version: 1, settings: { density: v } }).settings.density).toBe(1);
+    }
+    const store = memory();
+    writeSave(store, { ...defaultSave(), settings: { ...defaultSave().settings, density: 0.5, gameSpeed: 1.25 } });
+    expect(loadSave(store).settings).toMatchObject({ density: 0.5, gameSpeed: 1.25 });
   });
 
   it('drops the removed reactor module from older saves and keeps the others', () => {
@@ -211,7 +230,7 @@ describe('save', () => {
       totals: { missions: 3, wins: 2, bestScore: { 'mul-7': 120, 'mix-1': 80, [planet]: 50 } },
     };
     const loaded = loadSave(memory(JSON.stringify(old)));
-    expect(loaded.settings).toEqual({ sfxVolume: 0.5, musicVolume: 0.5, keypadAlwaysVisible: false, gameSpeed: 1 });
+    expect(loaded.settings).toEqual({ sfxVolume: 0.5, musicVolume: 0.5, keypadAlwaysVisible: false, gameSpeed: 1, density: 1 });
     expect(loaded.totals.bestScore).toEqual({ [planet]: 50 });
     expect(loaded.stats['mul:7x8'].box).toBe(3);
     expect(loaded.location).toEqual(defaultLocation());

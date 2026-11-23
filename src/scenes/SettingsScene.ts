@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
 import { app, setLocale } from '../app';
 import { LOCALES } from '../core/i18n';
-import { GAME_SPEEDS, defaultSave } from '../core/save';
-import type { GameSpeed, SaveData } from '../core/save';
+import { DENSITIES, GAME_SPEEDS, defaultSave } from '../core/save';
+import type { SaveData } from '../core/save';
 import { IMG } from '../fx/assets';
 import { addBackdrop, addShade } from '../fx/backdrop';
 import { Button } from '../ui/Button';
@@ -10,23 +10,26 @@ import { LevelControl } from '../ui/LevelControl';
 import { Panel } from '../ui/Panel';
 import { Toggle } from '../ui/Toggle';
 import { capsStyle } from '../ui/TextStyles';
-import { percentText } from '../ui/format';
+import { multiplierText, percentText } from '../ui/format';
 import { CSS, DEPTH, GAME_HEIGHT, SIZES, SPACING } from '../ui/theme';
 
 /** Compact centred column: labels on the left, controls from CONTROL_X. */
-const COLUMN = { x: 290, y: 178, w: 700, h: 388 };
+const COLUMN = { x: 290, y: 166, w: 700, h: 414 };
 const LABEL_X = COLUMN.x + 32;
 const CONTROL_X = COLUMN.x + 272;
-const ROW_Y = { language: 222, sfx: 278, music: 334, speed: 390, keypad: 446, reset: 516 };
+const ROW_Y = { language: 206, sfx: 258, music: 310, speed: 362, density: 414, keypad: 466, reset: 532 };
 const SMALL_BTN_H = 30;
-const SPEED_KEYS: Record<GameSpeed, string> = { 0.75: 'common.speed.slow', 1: 'common.speed.normal', 1.25: 'common.speed.fast' };
+/** Four-choice rows (speed, density): button width and step. */
+const CHOICE_W = 88;
+const CHOICE_STEP = 96;
 /** How long the "erased" mark stays before the reset row returns to its first step. */
 const RESET_DONE_MS = 1600;
 
-/** Language, volumes, game speed, keypad and progress reset. Labels only; every change is saved at once. */
+/** Language, volumes, game speed, density, keypad and progress reset. Labels only; every change is saved at once. */
 export class SettingsScene extends Phaser.Scene {
   private resetLayer!: Phaser.GameObjects.Container;
   private speedLayer!: Phaser.GameObjects.Container;
+  private densityLayer!: Phaser.GameObjects.Container;
   private resetTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
@@ -76,6 +79,11 @@ export class SettingsScene extends Phaser.Scene {
     this.speedLayer = this.add.container(0, 0).setDepth(DEPTH.hud + 1);
     this.buildSpeedButtons();
 
+    // Density.
+    ui.add(this.rowLabel(ROW_Y.density, t('common.settings.density')));
+    this.densityLayer = this.add.container(0, 0).setDepth(DEPTH.hud + 1);
+    this.buildDensityButtons();
+
     // Keypad.
     ui.add(this.rowLabel(ROW_Y.keypad, t('common.settings.keypadAlwaysVisible')));
     ui.add(new Toggle(this, CONTROL_X, ROW_Y.keypad, app.save.settings.keypadAlwaysVisible,
@@ -95,18 +103,29 @@ export class SettingsScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
   }
 
-  /** Three choices; the active one is highlighted. Rebuilt after every change. */
+  /** Four speed choices (×0.5 … ×1.25); the active one is highlighted. Rebuilt after every change. */
   private buildSpeedButtons(): void {
-    const { t } = app.i18n;
-    this.speedLayer.removeAll(true);
-    GAME_SPEEDS.forEach((speed, i) => {
-      const active = app.save.settings.gameSpeed === speed;
-      this.speedLayer.add(new Button(this, CONTROL_X + 50 + i * 108, ROW_Y.speed, t(SPEED_KEYS[speed]), () => {
-        if (app.save.settings.gameSpeed === speed) return;
-        this.updateSettings({ gameSpeed: speed });
+    this.buildChoices(this.speedLayer, ROW_Y.speed, GAME_SPEEDS, () => app.save.settings.gameSpeed,
+      (gameSpeed) => this.updateSettings({ gameSpeed }), () => this.buildSpeedButtons());
+  }
+
+  /** Four density choices (×0.5 … ×1.25), same control as the speed row. */
+  private buildDensityButtons(): void {
+    this.buildChoices(this.densityLayer, ROW_Y.density, DENSITIES, () => app.save.settings.density,
+      (density) => this.updateSettings({ density }), () => this.buildDensityButtons());
+  }
+
+  private buildChoices<T extends number>(layer: Phaser.GameObjects.Container, y: number, values: readonly T[],
+    current: () => T, set: (v: T) => void, rebuild: () => void): void {
+    layer.removeAll(true);
+    values.forEach((v, i) => {
+      const active = current() === v;
+      layer.add(new Button(this, CONTROL_X + CHOICE_W / 2 + i * CHOICE_STEP, y, multiplierText(app.i18n, v), () => {
+        if (current() === v) return;
+        set(v);
         // Rebuild on the next tick, not inside the tapped button's own input handler.
-        this.time.delayedCall(0, () => this.buildSpeedButtons());
-      }, { width: 100, height: SMALL_BTN_H, variant: active ? 'primary' : 'ghost', fontSize: SIZES.small + 1 }));
+        this.time.delayedCall(0, rebuild);
+      }, { width: CHOICE_W, height: SMALL_BTN_H, variant: active ? 'primary' : 'ghost', fontSize: SIZES.small + 1 }));
     });
   }
 

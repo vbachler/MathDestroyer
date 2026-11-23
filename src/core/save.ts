@@ -11,7 +11,7 @@ export interface SaveData {
   stats: Record<string, FactStats>;   // keyed by Fact.statId
   planets: Record<string, PlanetProgress>;   // planet progress by planet id; missing = level 0
   settings: { sfxVolume: number; musicVolume: number; keypadAlwaysVisible: boolean;
-              gameSpeed: GameSpeed; };   // default 1; loadSave fills it for older saves
+              gameSpeed: GameSpeed; density: Density; };   // both default 1; loadSave fills them for older saves
   totals: { missions: number; wins: number; bestScore: Record<string, number> }; // bestScore by planetId
   story: { seen: string[] };      // skill ids whose intro has been shown; loadSave fills it for older saves
   location: Location;             // where the player's ship is; default: first system of add-5 (new players start in addition)
@@ -41,9 +41,12 @@ export function sanitizeLocation(v: unknown): Location {
 }
 /** Station modules that no longer exist; loadSave drops them. */
 export const REMOVED_MODULES: readonly string[] = ['reactor'];
-/** Game-speed setting, passed to BattleConfig.speedScale: 0.75 slow, 1 normal, 1.25 fast. */
-export type GameSpeed = 0.75 | 1 | 1.25;
-export const GAME_SPEEDS: readonly GameSpeed[] = [0.75, 1, 1.25];
+/** Game-speed setting, passed to BattleConfig.speedScale: 0.5 and 0.75 slower, 1 normal, 1.25 fast. */
+export type GameSpeed = 0.5 | 0.75 | 1 | 1.25;
+export const GAME_SPEEDS: readonly GameSpeed[] = [0.5, 0.75, 1, 1.25];
+/** Density setting (how crowded a battle is), passed to BattleConfig.density and the boarding. */
+export type Density = 0.5 | 0.75 | 1 | 1.25;
+export const DENSITIES: readonly Density[] = [0.5, 0.75, 1, 1.25];
 
 export interface StorageAdapter { getItem(k: string): string | null; setItem(k: string, v: string): void; }
 export const SAVE_KEY = 'mathdestroyer.save.v1';
@@ -56,7 +59,7 @@ export function defaultSave(): SaveData {
     modules: {},
     stats: {},
     planets: {},
-    settings: { sfxVolume: 0.8, musicVolume: 0.6, keypadAlwaysVisible: false, gameSpeed: 1 },
+    settings: { sfxVolume: 0.8, musicVolume: 0.6, keypadAlwaysVisible: false, gameSpeed: 1, density: 1 },
     totals: { missions: 0, wins: 0, bestScore: {} },
     story: { seen: [] },
     location: defaultLocation(),
@@ -69,6 +72,7 @@ const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? v : fallback;
 const bool = (v: unknown, fallback: boolean): boolean => (typeof v === 'boolean' ? v : fallback);
 const gameSpeed = (v: unknown): GameSpeed => GAME_SPEEDS.find((g) => g === v) ?? 1;
+const density = (v: unknown): Density => DENSITIES.find((g) => g === v) ?? 1;
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
 
 function numberRecord(v: unknown): Record<string, number> {
@@ -149,6 +153,7 @@ export function migrate(raw: unknown): SaveData {
       musicVolume: clamp01(num(settings.musicVolume, d.settings.musicVolume)),
       keypadAlwaysVisible: bool(settings.keypadAlwaysVisible, d.settings.keypadAlwaysVisible),
       gameSpeed: gameSpeed(settings.gameSpeed),
+      density: density(settings.density),
     },
     totals: {
       missions: num(totals.missions, 0),

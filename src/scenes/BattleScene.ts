@@ -132,6 +132,7 @@ export class BattleScene extends Phaser.Scene {
       now,
       seed: now % 0x7fffffff,
       speedScale: this.speedScale,
+      density: save.settings.density,
     });
 
     this.cameras.main.setBackgroundColor(COLORS.bg);
@@ -183,7 +184,7 @@ export class BattleScene extends Phaser.Scene {
     const dt = Math.min(delta, MAX_FRAME_MS);
     this.drift(dt);
     if (!this.paused) this.handleEvents(this.sim.update(dt));
-    for (const st of this.stations) st.update(dt);
+    if (!this.paused) for (const st of this.stations) st.update(dt);
     for (const ship of this.ships.values()) ship.tick(dt);
     this.renderState();
     app.sfx.setTension(this.tensionLevel());
@@ -287,7 +288,7 @@ export class BattleScene extends Phaser.Scene {
         case 'spawn': this.ensureShip(ev.enemy); break;
         case 'kill': this.onKill(ev.enemy, ev.byTurret, ev.points); break;
         case 'wrong': this.onWrong(); break;
-        case 'impact': this.onImpact(ev.enemy, ev.domeIndex); break;
+        case 'impact': this.onImpact(ev.enemy, ev.domeIndex, ev.destroyed); break;
         case 'shieldBlock': this.onShieldBlock(ev.enemy, ev.domeIndex); break;
         case 'repair': this.onRepair(ev.domeIndex); break;
         case 'waveCleared': this.onWaveCleared(); break;
@@ -355,12 +356,18 @@ export class BattleScene extends Phaser.Scene {
     this.dash.shakeInput();
   }
 
-  private onImpact(e: Enemy, domeIndex: number): void {
+  /** `destroyed`: the station's last hp; it blows up into a debris field (Station.setHp) with its own sound. */
+  private onImpact(e: Enemy, domeIndex: number, destroyed: boolean): void {
     const p = this.shipPoint(e);
     this.removeShip(e.id);
     const st = this.stations[domeIndex];
     shipExplosion(this, (p.x + st.x) / 2, st.top, 46, COLORS.danger);
     sparks(this, st.x, STATION_Y, COLORS.danger, 10, 90);
+    if (destroyed) {
+      this.cameras.main.shake(320, 0.0045);
+      app.sfx.stationDestroyed();
+      return;
+    }
     this.cameras.main.shake(200, 0.003);
     app.sfx.miss();
   }
@@ -465,6 +472,7 @@ export class BattleScene extends Phaser.Scene {
       facts: this.sim.boardingFacts(),
       seed: (this.sim.config.seed + 7919 * (s.boardings + 1)) % 0x7fffffff,
       speedScale: this.speedScale,
+      density: this.sim.config.density,
       onDone: (r) => this.onBoardingDone(r),
     };
     this.scene.pause();
@@ -653,6 +661,7 @@ export class BattleScene extends Phaser.Scene {
     this.bg = null;
     this.ships.clear();
     this.tagSides.clear();
+    for (const st of this.stations) st.destroy();
     this.stations = [];
     this.explainDim = null;
     this.explainCard = null;

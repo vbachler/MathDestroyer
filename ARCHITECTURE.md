@@ -277,7 +277,8 @@ export interface BattleConfig {
   modules: Record<string, number>;            // station modules owned: moduleId -> tier
   now: number;                                // epoch ms at mission start
   seed: number;
-  speedScale: number;                         // 0.75 | 1 | 1.25 from settings.gameSpeed
+  speedScale: number;                         // 0.5 | 0.75 | 1 | 1.25 from settings.gameSpeed
+  density?: number;                           // settings.density, default 1 (see "Settings v7")
 }
 
 export class BattleSim {
@@ -301,8 +302,8 @@ Rules, all implemented in the sim:
 - **Waves**: wave w spawns `6 + 2*w` enemies (8, 10, 12 over a 3-wave mission; raised after
   play-testing because waves ended too soon). Spawn interval `max(1800, 3600 - 250*w) / speedScale` ms.
   Base speed `(20 + 3*w) * speedScale` px/s, with a random factor 0.9–1.1 per enemy.
-  `speedScale` comes from `BattleConfig` (the player's game-speed setting: 0.75 slow, 1 normal,
-  1.25 fast). At most 4 enemies alive;
+  `speedScale` comes from `BattleConfig` (the player's game-speed setting: 0.5 / 0.75 slower, 1 normal,
+  1.25 fast). At most 4 enemies alive (default density; see "Settings v7");
   spawning pauses while at the cap. Lanes are chosen so two enemies do not overlap (no spawn in a
   lane whose newest enemy is above y = 200).
 - **Submit**: if one or more live enemies have `fact.answer === typed value`, destroy the one
@@ -376,7 +377,8 @@ export interface SaveData {
   modules: Record<string, number>;
   stats: Record<string, FactStats>;
   settings: { sfxVolume: number; musicVolume: number; unlockAll: boolean; keypadAlwaysVisible: boolean;
-              gameSpeed: 0.75 | 1 | 1.25; };   // default 1; loadSave fills it for older saves
+              gameSpeed: 0.5 | 0.75 | 1 | 1.25;
+              density: 0.5 | 0.75 | 1 | 1.25; };   // both default 1; loadSave fills them for older saves
   totals: { missions: number; wins: number; bestScore: Record<string, number> }; // bestScore by planetId
 }
 export interface StorageAdapter { getItem(k: string): string | null; setItem(k: string, v: string): void; }
@@ -1052,3 +1054,53 @@ two crawlers on the same lane closer than 0.25 in z. Records use the same outcom
   waits). The lane rule holds for the whole approach: a lane is free only if the gap to every
   crawler on it stays >= 0.25 until that one bites (a faster newcomer cannot catch up); with no
   free lane the spawn waits. A wrong answer records `wrong` once per crawler (BattleSim rule).
+
+## Settings v7: slower speed and density
+
+- **Speed:** `GAME_SPEEDS = [0.5, 0.75, 1, 1.25]` (`GameSpeed` type), default 1. Unknown values
+  reset to 1 in `migrate`. Passed as before (`gameSpeed * tierSpeedFactor` = `speedScale`).
+- **Density** (how crowded a fight is, independent from speed): `settings.density: Density`,
+  `DENSITIES = [0.5, 0.75, 1, 1.25]`, default 1; older saves get 1, invalid values reset to 1
+  (same rule as `gameSpeed`).
+  - `BattleConfig.density` (optional, default 1; non-finite or <= 0 -> 1): spawn interval
+    `max(1800, 3600 - 250*w) / speedScale / density`; max alive `maxAlive(density)` =
+    `round(4 * density)` -> 2 / 3 / 4 / 5. `MAX_ALIVE` (4) stays the default-density value.
+    Enemies per wave unchanged (a sparse wave just lasts longer).
+  - `BoardingConfig.density` (optional, default 1): spawn interval `BOARDING_SPAWN_MS /
+    speedScale / density`; max alive `boardingMaxAlive(density)` = 2 when density < 1, otherwise
+    `BOARDING_MAX_ALIVE` (3).
+  - BattleScene passes `save.settings.density` into the BattleSim config and through
+    `BoardingSceneData.density` to the BoardingSim.
+- **SettingsScene:** speed and density are two rows of four buttons in the same style, labelled
+  `×0.5 ×0.75 ×1 ×1.25` (`common.multiplier`, locale decimal separator; the former
+  `common.speed.*` words are gone). Row label `common.settings.density` ("Gustoća" / "Density").
+  Rows were tightened (52 px apart) so seven rows fit the panel at 1280x720.
+
+## v8: more aliens, foreground guns, hangar ambience
+
+- **Kinds:** `CrawlerKind` adds `stalker` (speed 1.15), `drifter` (0.9), `wraith` (0.8); all seven in
+  `CRAWLER_KINDS`, drawn uniformly. Art: `art-src/crawler_{e,f,g}.png` and
+  `crawler_frames/{stalker,drifter,wraith}/00..15.png` -> `crawlers/<kind>.png` / `<kind>_walk.png`
+  (same keying; drifter and wraith also key backdrop enclosed by tentacles/arms, `HOLE_KINDS`).
+  The wraith's black pool is kept (it is opaque creature); cast shadows go as before. Code-drawn
+  fallbacks exist for all seven.
+- **Gait (`boardingLayout`):** `GaitStyle` gains `lunge` (dash-and-hold zig-zag, stalker), `hover` +
+  `bobHz` (drifter floats 0.6 of its height above its floor point, slow bob, soft `TEX.shade` blob
+  on the floor) and `glide` (wraith: no bob or squash, slow sway). `CRAWLER_SIZE` scales the drawn
+  width per kind (drifter 0.85, wraith 1.25). A crawler's `centre` includes the hover lift.
+- **Guns:** `bg_hangar` no longer contains the guns. `npm run art` builds `ui/gun_left.png` /
+  `ui/gun_right.png` in background space: alpha from `art-src/hangar_guns_mask.png` (green key,
+  eroded 1 px, feathered), colours from `art-src/bg_hangar_guns.png` resized to 1344x760 and aligned
+  per gun by edge correlation (offsets about -5,-7 and -11,-8 px), with 110 rows repeated below the
+  frame. `GUN_LEFT` / `GUN_RIGHT` record their view position (scale 2/3), pivot and muzzle.
+  `fx/HangarGuns` draws them at `DEPTH.enemies + 6.5` (over every crawler body; the crawler's tag
+  is a separate container at `+8..9`; the bite lunge stays on top), tracks the nearest crawler
+  (idle sway without one), clamps to +-18 deg (`GUN_MAX_ANGLE`), and on every shot (hit or miss)
+  snaps to the aim point, recoils (`gunKick`) and returns the rotated muzzle tips (`gunMuzzle`),
+  where beams and flashes start. Missing sprites: code-drawn barrels with the same geometry.
+  Lamp spots and beacons were re-measured on the new picture (`SPARK_LAMPS`, `BEACONS`).
+- **Audio:** `audio/Hangar.ts` (`HangarBed`), started by `Sfx.startHangar()` on the music bus over
+  the battle bed (music volume): unstable drone, creaks and hull groans every 4-12 s, distant
+  thuds, drips, a rare far screech; everything through one gain, faded by `Sfx.stopHangar(fade)` on
+  pause (restarted on resume), repelled, overrun and shutdown. `Sfx.sparkCrackle()` (sfx bus, UI
+  priority) on lamp flashes only when `crackleGate` allows: chance 0.22 and never within 1.5 s.

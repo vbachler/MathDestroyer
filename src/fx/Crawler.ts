@@ -6,9 +6,9 @@ import type { CrawlerImageKind } from './assets';
 import { TAG_GAP } from './battleLayout';
 import type { Point, TagSide } from './battleLayout';
 import {
-  brightness, CRAWLER_NEAR_W, depthOrder, floorPoint, GAIT, gaitHz, gaitPose, perspectiveScale,
+  brightness, CRAWLER_NEAR_W, CRAWLER_SIZE, depthOrder, floorPoint, GAIT, gaitHz, gaitPose, hoverLift, perspectiveScale,
 } from './boardingLayout';
-import { CRAWLER_FALLBACK } from './textures';
+import { CRAWLER_FALLBACK, TEX } from './textures';
 
 const TAG_PAD_X = 9;
 const TAG_PAD_Y = 3;
@@ -16,33 +16,47 @@ const TAG_PAD_Y = 3;
 const CLOSE_Z = 0.22;
 const ENTRY_MS = 700;
 
-/** Opaque vertical extent of each processed image (fractions of the 512 px frame, measured). */
-const FRAME: Readonly<Record<CrawlerImageKind, { top: number; foot: number }>> = {
+/** Opaque extent of each processed image (fractions of the 512 px frame, measured): top, foot, width. */
+const FRAME: Readonly<Record<CrawlerImageKind, { top: number; foot: number; w?: number }>> = {
   scorpion: { top: 0.025, foot: 0.975 },
   spider: { top: 0.23, foot: 0.77 },
   crab: { top: 0.035, foot: 0.965 },
   beetle: { top: 0, foot: 1 },
+  stalker: { top: 0, foot: 1 },
+  drifter: { top: 0.002, foot: 1, w: 0.66 },
+  wraith: { top: 0.004, foot: 1, w: 0.83 },
 };
 /** Union of the opaque extent over the 16 walk-cycle cells (fractions of the 256 px cell, measured). */
-const WALK_FRAME: Readonly<Record<CrawlerImageKind, { top: number; foot: number }>> = {
+const WALK_FRAME: Readonly<Record<CrawlerImageKind, { top: number; foot: number; w?: number }>> = {
   scorpion: { top: 0.023, foot: 0.973 },
   spider: { top: 0.23, foot: 0.766 },
   crab: { top: 0.059, foot: 0.938 },
   beetle: { top: 0, foot: 0.992 },
+  stalker: { top: 0.004, foot: 0.996, w: 0.96 },
+  drifter: { top: 0.008, foot: 0.996, w: 0.7 },
+  wraith: { top: 0.016, foot: 0.996, w: 0.84 },
 };
 /** Walk-cycle frame rate at speed factor 1 (the crawler's speed relative to UNIT_SPEED). */
 const WALK_FPS = 12;
 
-/** The code-drawn fallbacks: body roughly 0.2..0.9 of the 256 px frame. */
-const FALLBACK_FRAME = { top: 0.2, foot: 0.9 };
+/** The code-drawn fallbacks: body roughly 0.2..0.9 of the 256 px frame (tall kinds start higher). */
+const FALLBACK_FRAME: Readonly<Partial<Record<CrawlerImageKind, { top: number; foot: number; w?: number }>>> = {
+  drifter: { top: 0.17, foot: 0.9, w: 0.5 },
+  wraith: { top: 0.1, foot: 0.9, w: 0.75 },
+};
+const FALLBACK_DEFAULT = { top: 0.2, foot: 0.9 };
+
+/** Soft floor shadow under a flying crawler: starting alpha (follow() sets it per frame). */
+const HOVER_SHADOW_ALPHA = 0.5;
 
 /**
  * One boarding crawler, standing on the hangar floor in one-point perspective. With its
  * walk-cycle sheet it plays the 16-frame loop (rate follows its approach speed) plus a bob and
  * zig-zag in code; without it, a still animated in code (leg skitter as a quick rock and
- * squash, bob, zig-zag). It stands on the hangar floor in one-point perspective, with its
- * problem on the same compact dark tag the battle ships carry. The container origin is the
- * crawler's feet; the body pivots there.
+ * squash, bob, zig-zag). Flying kinds (GAIT hover) float above their floor point over a soft
+ * shadow blob; gliding kinds only sway. The container origin is the floor point; the body pivots
+ * there. The problem tag lives in its own container (`tagLayer`) so the scene can draw the
+ * foreground guns between the bodies and the tags.
  */
 export class Crawler extends Phaser.GameObjects.Container {
   readonly id: number;
@@ -53,11 +67,13 @@ export class Crawler extends Phaser.GameObjects.Container {
   private readonly sprite: Phaser.GameObjects.Sprite;
   /** True when the walk-cycle sheet plays (no fake rock/squash skitter then). */
   private readonly walking: boolean;
-  private readonly shadow: Phaser.GameObjects.Ellipse;
+  private readonly flying: boolean;
+  private readonly shadow: Phaser.GameObjects.Ellipse | Phaser.GameObjects.Image;
+  private readonly tagLayer: Phaser.GameObjects.Container;
   private readonly hairline: Phaser.GameObjects.Graphics;
   private readonly plate: Phaser.GameObjects.Graphics;
   private readonly text: Phaser.GameObjects.Text;
-  private readonly frame: { top: number; foot: number };
+  private readonly frame: { top: number; foot: number; w?: number };
   private readonly frameScale: number;   // display width at scale 1 / texture width
   private readonly seed = Math.random() * Math.PI * 2;
   private clock = 0;
@@ -67,6 +83,8 @@ export class Crawler extends Phaser.GameObjects.Container {
   private close = false;
   private drawnW = 0;
   private drawnH = 0;
+  /** Height of the body's feet above the floor point (flying kinds), px. */
+  private airY = 0;
   /** Set while the bite lunge runs: the crawler no longer follows the floor. */
   private lunging = false;
 
@@ -83,11 +101,14 @@ export class Crawler extends Phaser.GameObjects.Container {
     this.walking = hasImage(scene, sheet);
     const real = hasImage(scene, image);
     const key = this.walking ? sheet : real ? image : CRAWLER_FALLBACK[kind];
-    this.frame = this.walking ? WALK_FRAME[kind] : real ? FRAME[kind] : FALLBACK_FRAME;
+    this.frame = this.walking ? WALK_FRAME[kind] : real ? FRAME[kind] : (FALLBACK_FRAME[kind] ?? FALLBACK_DEFAULT);
+    this.flying = GAIT[kind].hover !== undefined;
 
-    this.shadow = scene.add.ellipse(0, 0, 10, 4, 0x000000, 0.5);
+    this.shadow = this.flying
+      ? scene.add.image(0, 0, TEX.shade).setTint(0x000000).setAlpha(HOVER_SHADOW_ALPHA)
+      : scene.add.ellipse(0, 0, 10, 4, 0x000000, 0.5);
     this.sprite = scene.add.sprite(0, 0, key, 0).setOrigin(0.5, this.frame.foot);
-    this.frameScale = CRAWLER_NEAR_W / this.sprite.width;
+    this.frameScale = (CRAWLER_NEAR_W * CRAWLER_SIZE[kind]) / this.sprite.width;
     if (this.walking) {
       const anim = `${sheet}-loop`;
       if (!scene.anims.exists(anim)) {
@@ -97,7 +118,9 @@ export class Crawler extends Phaser.GameObjects.Container {
         });
       }
       this.sprite.play({ key: anim, startFrame: Math.floor(Math.random() * WALK_FRAMES) });
-      this.sprite.anims.timeScale = Math.max(0.3, speedFactor);
+      // Flying / gliding kinds breathe rather than walk: their loop keeps its own pace.
+      const glides = this.flying || GAIT[kind].glide === true;
+      this.sprite.anims.timeScale = glides ? 0.8 : Math.max(0.3, speedFactor);
     }
 
     this.text = scene.add.text(0, 0, problem, numeralStyle({ fontSize: `${SIZES.problem}px`, color: CSS.text })).setOrigin(0.5);
@@ -105,7 +128,8 @@ export class Crawler extends Phaser.GameObjects.Container {
     this.tagHeight = Math.ceil(this.text.height) + TAG_PAD_Y * 2;
     this.hairline = scene.add.graphics();
     this.plate = scene.add.graphics();
-    this.add([this.shadow, this.sprite, this.hairline, this.plate, this.text]);
+    this.add([this.shadow, this.sprite]);
+    this.tagLayer = scene.add.container(0, 0, [this.hairline, this.plate, this.text]);
 
     // Emerges from the gloom of the door.
     this.sprite.setAlpha(0);
@@ -118,8 +142,8 @@ export class Crawler extends Phaser.GameObjects.Container {
   /** Half the drawn body width (for tag layout). */
   get halfWidth(): number { return this.drawnW / 2; }
   get halfHeight(): number { return this.drawnH / 2; }
-  /** Centre of the drawn body in view coordinates. */
-  get centre(): Point { return { x: this.x, y: this.y - this.drawnH / 2 }; }
+  /** Centre of the drawn body in view coordinates (lifted with a flying body). */
+  get centre(): Point { return { x: this.x, y: this.y - this.airY - this.drawnH / 2 }; }
   get depthZ(): number { return this.depthZ_; }
 
   /** Follows the sim: depth z and lane. Call every frame with the frame time. */
@@ -137,19 +161,38 @@ export class Crawler extends Phaser.GameObjects.Container {
     const pose = gaitPose(style, this.clock, this.legPhase, this.seed);
     const s = perspectiveScale(z);
     const feet = floorPoint(z, lane, pose.sway);
-    const width = CRAWLER_NEAR_W * s;
-    this.drawnW = width;
+    const width = CRAWLER_NEAR_W * CRAWLER_SIZE[this.kind] * s;
+    this.drawnW = width * (this.frame.w ?? 1);
     this.drawnH = width * (this.frame.foot - this.frame.top);
     this.setPosition(feet.x, feet.y);
 
     const k = this.frameScale * s;
-    if (this.walking) this.sprite.setScale(k).setY(-pose.lift * 0.5 * this.drawnH);
-    else this.sprite.setScale(k * pose.scaleX, k * pose.scaleY).setRotation(pose.rotation).setY(-pose.lift * this.drawnH);
+    const smooth = this.flying || style.glide === true;
+    if (smooth) {
+      // No legs: sway about the feet (or the hovering body), bob only when flying.
+      this.airY = hoverLift(style, this.drawnH) + pose.lift * this.drawnH;
+      this.sprite.setScale(k).setRotation(pose.rotation).setY(-this.airY);
+    } else if (this.walking) {
+      this.airY = 0;
+      this.sprite.setScale(k).setY(-pose.lift * 0.5 * this.drawnH);
+    } else {
+      this.airY = 0;
+      this.sprite.setScale(k * pose.scaleX, k * pose.scaleY).setRotation(pose.rotation).setY(-pose.lift * this.drawnH);
+    }
     const b = brightness(z);
     const c = (f: number): number => Math.round(255 * Math.min(1, b * f));
     this.sprite.setTint(Phaser.Display.Color.GetColor(c(0.92), c(0.96), c(1)));
-    this.shadow.setSize(width * 0.8, Math.max(2, width * 0.12)).setAlpha(0.25 + 0.4 * b)
-      .setScale(1 - 0.25 * pose.lift / Math.max(0.001, GAIT[this.kind].bob));
+    if (this.flying) {
+      // Soft blob on the floor: smaller and fainter the higher the body floats.
+      const hNorm = this.airY / Math.max(1, this.drawnH);
+      // (The shade disc is solid only to 40 % of its size, so it is drawn wide.)
+      const spread = 1.9 - 0.5 * hNorm;
+      this.shadow.setDisplaySize(this.drawnW * spread, Math.max(4, this.drawnW * 0.38 * spread))
+        .setAlpha(Math.min(0.85, (0.35 + 0.5 * b) * (1.15 - 0.3 * hNorm)));
+    } else {
+      (this.shadow as Phaser.GameObjects.Ellipse).setSize(width * 0.8, Math.max(2, width * 0.12));
+      this.shadow.setAlpha(0.25 + 0.4 * b).setScale(1 - 0.25 * pose.lift / Math.max(0.001, style.bob));
+    }
     this.setDepth(DEPTH.enemies + depthOrder(z) * 5);
 
     const close = z < CLOSE_Z;
@@ -157,6 +200,7 @@ export class Crawler extends Phaser.GameObjects.Container {
       this.close = close;
       this.drawTag();
     }
+    this.syncTag();
     if (this.side) this.placeTag();
     return this;
   }
@@ -175,7 +219,8 @@ export class Crawler extends Phaser.GameObjects.Container {
    */
   lunge(onDone: () => void): void {
     this.lunging = true;
-    for (const o of [this.hairline, this.plate, this.text, this.shadow]) o.setVisible(false);
+    this.tagLayer.setVisible(false);
+    this.shadow.setVisible(false);
     this.setDepth(DEPTH.overlay - 10);
     const target = (3.4 * this.scene.scale.width) / this.sprite.width;
     this.sprite.setTint(0xffffff);
@@ -183,12 +228,22 @@ export class Crawler extends Phaser.GameObjects.Container {
       targets: this, x: this.scene.scale.width / 2, y: this.scene.scale.height * 1.55, duration: 220, ease: 'Quad.easeIn',
     });
     this.scene.tweens.add({
-      targets: this.sprite, scaleX: target, scaleY: target, rotation: this.sprite.rotation * 3, duration: 220, ease: 'Quad.easeIn',
+      targets: this.sprite, scaleX: target, scaleY: target, y: 0, rotation: this.sprite.rotation * 3, duration: 220, ease: 'Quad.easeIn',
       onComplete: () => {
         onDone();
         this.scene.tweens.add({ targets: this, alpha: 0, duration: 120, onComplete: () => this.destroy() });
       },
     });
+  }
+
+  override destroy(fromScene?: boolean): void {
+    this.tagLayer.destroy(fromScene);
+    super.destroy(fromScene);
+  }
+
+  /** The tag follows the body; tags draw above the guns (DEPTH.enemies + 8..9, nearer on top). */
+  private syncTag(): void {
+    this.tagLayer.setPosition(this.x, this.y - this.airY).setDepth(DEPTH.enemies + 8 + depthOrder(this.depthZ_));
   }
 
   private placeTag(): void {

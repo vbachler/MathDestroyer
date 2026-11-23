@@ -14,8 +14,12 @@ const OUT = path.join(ROOT, 'public', 'assets');
 
 const BACKGROUNDS = ['bg_battle_ocean', 'bg_battle_desert', 'bg_battle_ice', 'bg_menu', 'bg_starmap', 'bg_bridge',
   'bg_ftl', 'station_shop_bg', 'bg_hangar'];
-/** Boarding crawlers: green-screen source -> crawlers/<kind>.png (a scorpion, b spider, c crab, d beetle). */
-const CRAWLERS = { crawler_a: 'scorpion', crawler_b: 'spider', crawler_c: 'crab', crawler_d: 'beetle' };
+/** Boarding crawlers: green-screen source -> crawlers/<kind>.png (a scorpion, b spider, c crab, d beetle,
+ *  e stalker, f drifter, g wraith). */
+const CRAWLERS = {
+  crawler_a: 'scorpion', crawler_b: 'spider', crawler_c: 'crab', crawler_d: 'beetle',
+  crawler_e: 'stalker', crawler_f: 'drifter', crawler_g: 'wraith',
+};
 const SHIPS = ['ship_enemy_a', 'ship_enemy_b', 'ship_enemy_c', 'ship_player', 'station_orbital'];
 const PLANETS = ['planet_1', 'planet_2', 'planet_3', 'planet_4', 'planet_5', 'planet_6', 'planet_7', 'planet_8'];
 const PORTRAITS = ['portrait_tarrow', 'portrait_kito', 'portrait_abacus'];
@@ -207,16 +211,24 @@ function squareJpeg(size) {
  * green spill, is darker than that and stays opaque).
  */
 function chromaKey(box, opts = {}) {
-  return (src, out) => chromaKeyInto(src, out, box, opts.shadows === true);
+  return (src, out) => chromaKeyInto(src, out, box, opts.shadows === true, opts.holes === true);
 }
+
+/** Enclosed backdrop (opts.holes): normalised greenness of a "core" pixel, and how many a hole needs. */
+const HOLE_CORE = 0.85;
+const HOLE_MIN_PX = 40;
+const HOLE_MIN_FRAC = 0.0008;
+const HOLE_BRIGHT = 0.75;
+/** Kinds whose silhouettes enclose backdrop (tentacles, arms beside the body, legs under the torso). */
+const HOLE_KINDS = new Set(['drifter', 'wraith']);
 
 const SHADOW_G_LO = 30;
 const SHADOW_G_HI = 45;
 /** Green dominance by ratio: 1 for pure green, 0 for neutral. */
 const hueGreen = (data, i) => (data[i + 1] <= 0 ? 0 : (data[i + 1] - Math.max(data[i], data[i + 2])) / data[i + 1]);
 
-async function chromaKeyInto(src, out, boxSize, shadows) {
-  const { data, w, h } = await keyRgba(src, shadows);
+async function chromaKeyInto(src, out, boxSize, shadows, holes) {
+  const { data, w, h } = await keyRgba(src, shadows, holes);
   const box = alphaBounds(data, w, h, 6);
   if (!box) throw new Error('nothing left after keying');
   await rawImage(data, w, h)
@@ -228,7 +240,7 @@ async function chromaKeyInto(src, out, boxSize, shadows) {
 }
 
 /** Keys one green-screen image to RGBA with alpha (see chromaKey). */
-async function keyRgba(src, shadows) {
+async function keyRgba(src, shadows, holes = false) {
   const { data, w, h } = await loadRgba(src);
   const n = w * h;
 
@@ -275,6 +287,23 @@ async function keyRgba(src, shadows) {
   for (let x = 0; x < w; x++) { borderLabels.add(labels[x]); borderLabels.add(labels[(h - 1) * w + x]); }
   for (let y = 0; y < h; y++) { borderLabels.add(labels[y * w]); borderLabels.add(labels[y * w + w - 1]); }
   borderLabels.delete(-1);
+  if (holes) {
+    // Backdrop enclosed by the creature (between tentacles, arms and body): a greenish component
+    // not touching the border is keyed too when it holds enough pixels of real backdrop green
+    // (a glossy reflection of the screen on the black hull never gets that strong over that many).
+    // Core pixels must also be about as bright as the backdrop: green light reflected in the
+    // creature's own gaps (between ribs) is dimmer.
+    const borderG = [];
+    for (let x = 0; x < w; x += 2) borderG.push(data[x * 4 + 1], data[((h - 1) * w + x) * 4 + 1]);
+    const bgG = median(borderG);
+    const minCore = Math.max(HOLE_MIN_PX, n * HOLE_MIN_FRAC);
+    const core = new Map();
+    for (let p = 0; p < n; p++) {
+      const l = labels[p];
+      if (l >= 0 && g[p] > HOLE_CORE && data[p * 4 + 1] > bgG * HOLE_BRIGHT) core.set(l, (core.get(l) ?? 0) + 1);
+    }
+    for (const [l, count] of core) if (count >= minCore) borderLabels.add(l);
+  }
 
   const alpha = new Float32Array(n);
   const region = new Uint8Array(n);   // every keyed (border-connected greenish) pixel
@@ -352,7 +381,7 @@ async function walkSheet(kind) {
   }
   try {
     const keyed = [];
-    for (const f of files) keyed.push(await keyRgba(f, true));
+    for (const f of files) keyed.push(await keyRgba(f, true, HOLE_KINDS.has(kind)));
     let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
     for (const k of keyed) {
       const b = alphaBounds(k.data, k.w, k.h, 6);
@@ -579,6 +608,175 @@ async function dashStrip(src, out) {
   return `trimmed ${topRow} rows, ${DASH_WIDTH}x${outH} png`;
 }
 
+// ------------------------------------------------------------------ hangar guns
+
+/** Background space of bg/bg_hangar.jpg: 1344x760 source cover-resized to 1920x1080. */
+const HANGAR_SRC_W = 1344;
+const HANGAR_SRC_H = 760;
+const BG_W = 1920;
+const BG_H = 1080;
+/** Rows of the gun sprites repeated below the frame, so a rotated gun never shows its cut edge. */
+const GUN_EXTEND = 110;
+/** Soft rows at the bottom of the picture replaced by the clean row above them. */
+const GUN_EDGE_ROWS = 8;
+/** Largest mask -> colour offset searched (px at 1344). */
+const GUN_ALIGN_MAX = 16;
+
+function bilinear(plane, w, h, x, y, stride = 1, ch = 0) {
+  const fx = Math.min(w - 1, Math.max(0, x));
+  const fy = Math.min(h - 1, Math.max(0, y));
+  const x0 = Math.floor(fx); const y0 = Math.floor(fy);
+  const x1 = Math.min(w - 1, x0 + 1); const y1 = Math.min(h - 1, y0 + 1);
+  const tx = fx - x0; const ty = fy - y0;
+  const at = (xx, yy) => plane[(yy * w + xx) * stride + ch];
+  return (at(x0, y0) * (1 - tx) + at(x1, y0) * tx) * (1 - ty) + (at(x0, y1) * (1 - tx) + at(x1, y1) * tx) * ty;
+}
+
+/**
+ * The two foreground guns as separate sprites. art-src/hangar_guns_mask.png (1344x760, guns on
+ * green with a green colour cast) gives only the alpha: green key, specks removed, eroded 1 px
+ * and feathered. The colours come from art-src/bg_hangar_guns.png (the original 1920x1088 picture
+ * with the guns), whose offset against the mask is found per gun by matching edges. Each gun is
+ * written in background space (the 1920x1080 cover-fit of the 1344x760 hangar, i.e. the size it
+ * has in bg/bg_hangar.jpg), cropped to its alpha, with GUN_EXTEND rows repeated at the bottom.
+ * The printed positions are the top-left corners in the 1280x720 view (boardingLayout GUNS).
+ */
+async function hangarGuns() {
+  const maskSrc = path.join(SRC, 'hangar_guns_mask.png');
+  const colSrc = path.join(SRC, 'bg_hangar_guns.png');
+  for (const f of [maskSrc, colSrc]) {
+    if (!existsSync(f)) {
+      missing.push(path.basename(f, '.png'));
+      console.log(`WARNING: missing source ${rel(f)} (expected for public/assets/ui/gun_*.png)`);
+      return;
+    }
+  }
+  try {
+    const W = HANGAR_SRC_W; const H = HANGAR_SRC_H; const n = W * H;
+    const m = await sharp(maskSrc).resize(W, H, { fit: 'fill' }).removeAlpha().raw().toBuffer();
+    const border = [];
+    for (let x = 0; x < W; x++) for (const y of [0, H - 1]) {
+      const i = (y * W + x) * 3;
+      border.push(m[i + 1] - Math.max(m[i + 2], m[i] * 0.5));
+    }
+    const bgKey = Math.max(40, median(border));
+    let alpha = new Float32Array(n);
+    for (let p = 0; p < n; p++) {
+      const i = p * 3;
+      alpha[p] = 1 - smoothstep(0.3, 0.6, (m[i + 1] - Math.max(m[i + 2], m[i] * 0.5)) / bgKey);
+    }
+    // Specks out; then erode 1 px (min of the 3x3 neighbourhood) and feather.
+    const solid = new Uint8Array(n);
+    for (let p = 0; p < n; p++) solid[p] = alpha[p] > 0.5 ? 1 : 0;
+    const islands = components(solid, W, H);
+    for (let p = 0; p < n; p++) {
+      const l = islands.labels[p];
+      if (l >= 0 && islands.sizes[l] < 400) alpha[p] = 0;
+    }
+    const eroded = new Float32Array(n);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let v = 1;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const xx = Math.min(W - 1, Math.max(0, x + dx)); const yy = Math.min(H - 1, Math.max(0, y + dy));
+          v = Math.min(v, alpha[yy * W + xx]);
+        }
+        eroded[y * W + x] = v;
+      }
+    }
+    const blurred = boxBlur(eroded, W, H, 1);
+    alpha = new Float32Array(n);
+    for (let p = 0; p < n; p++) alpha[p] = clamp01(Math.max(eroded[p] * 0.6, blurred[p]) * 1.05 - 0.02);
+
+    // Colours: the original picture; align it to the mask per gun by edge correlation (at 1344).
+    const colMeta = await sharp(colSrc).metadata();
+    const CW = colMeta.width; const CH = colMeta.height;
+    const col = await sharp(colSrc).removeAlpha().raw().toBuffer();
+    const small = await sharp(colSrc).resize(W, H, { fit: 'fill' }).removeAlpha().raw().toBuffer();
+    const lum = new Float32Array(n);
+    for (let p = 0; p < n; p++) lum[p] = 0.3 * small[p * 3] + 0.6 * small[p * 3 + 1] + 0.1 * small[p * 3 + 2];
+    const grad = (P) => {
+      const G = new Float32Array(n);
+      for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        const p = y * W + x;
+        G[p] = Math.hypot(P[p + 1] - P[p - 1], P[p + W] - P[p - W]);
+      }
+      return G;
+    };
+    const gA = grad(alpha); const gL = grad(lum);
+    const sides = [{ name: 'left', x0: 0, x1: W / 2 }, { name: 'right', x0: W / 2, x1: W }];
+    for (const s of sides) {
+      let best = { dx: 0, dy: 0, score: -1 };
+      for (let dy = -GUN_ALIGN_MAX; dy <= GUN_ALIGN_MAX; dy++) {
+        for (let dx = -GUN_ALIGN_MAX; dx <= GUN_ALIGN_MAX; dx++) {
+          let score = 0;
+          for (let y = 1; y < H - 1; y++) for (let x = Math.max(1, s.x0); x < Math.min(W - 1, s.x1); x++) {
+            const p = y * W + x;
+            if (gA[p] < 0.05) continue;
+            const xx = x + dx; const yy = y + dy;
+            if (xx < 1 || yy < 1 || xx >= W - 1 || yy >= H - 1) continue;
+            score += gA[p] * gL[yy * W + xx];
+          }
+          if (score > best.score) best = { dx, dy, score };
+        }
+      }
+      s.dx = best.dx; s.dy = best.dy;
+    }
+
+    // Render in background space (full cover height, before the centre crop).
+    const k = BG_W / W;
+    const fullH = Math.round(H * k);
+    const cropTop = Math.floor((fullH - BG_H) / 2);
+    const out = [];
+    for (const s of sides) {
+      // Alpha bounds of this gun (at 1344).
+      let bx0 = W; let by0 = H; let bx1 = -1; let by1 = -1;
+      for (let y = 0; y < H; y++) for (let x = s.x0; x < s.x1; x++) {
+        if (alpha[y * W + x] > 0.02) { bx0 = Math.min(bx0, x); bx1 = Math.max(bx1, x); by0 = Math.min(by0, y); by1 = Math.max(by1, y); }
+      }
+      if (bx1 < 0) throw new Error(`no ${s.name} gun in the mask`);
+      const X0 = Math.floor(bx0 * k) - 2; const Y0 = Math.floor(by0 * k) - 2;
+      const X1 = Math.ceil((bx1 + 1) * k) + 2; const Y1 = Math.ceil((by1 + 1) * k);
+      const ow = X1 - X0; const oh = Y1 - Y0;
+      const fullOh = oh + GUN_EXTEND;
+      const buf = Buffer.alloc(ow * fullOh * 4);
+      const sx = CW / W; const sy = CH / H;
+      for (let Y = 0; Y < oh; Y++) {
+        for (let X = 0; X < ow; X++) {
+          const mx = (X0 + X + 0.5) / k - 0.5; const my = (Y0 + Y + 0.5) / k - 0.5;
+          const a = bilinear(alpha, W, H, mx, my);
+          const o = (Y * ow + X) * 4;
+          if (a <= 0.004) continue;
+          const cx = (mx + s.dx + 0.5) * sx - 0.5; const cy = (my + s.dy + 0.5) * sy - 0.5;
+          for (let c = 0; c < 3; c++) buf[o + c] = Math.round(bilinear(col, CW, CH, cx, cy, 3, c));
+          buf[o + 3] = Math.round(clamp01(a) * 255);
+        }
+      }
+      // The last rows of the picture are soft (key edge at the frame border): repeat a clean row
+      // from a little higher, alpha made binary, down through the extension.
+      const srcRow = oh - GUN_EDGE_ROWS;
+      for (let Y = srcRow + 1; Y < fullOh; Y++) {
+        for (let X = 0; X < ow; X++) {
+          const from = (srcRow * ow + X) * 4; const to = (Y * ow + X) * 4;
+          const solidPx = buf[from + 3] > 127;
+          for (let c = 0; c < 3; c++) buf[to + c] = solidPx ? buf[from + c] : 0;
+          buf[to + 3] = solidPx ? 255 : 0;
+        }
+      }
+      const file = path.join(OUT, 'ui', `gun_${s.name}.png`);
+      await ensureDir(file);
+      await sharp(buf, { raw: { width: ow, height: fullOh, channels: 4 } })
+        .png({ compressionLevel: 9 }).toFile(file);
+      const vx = (X0 * 2) / 3; const vy = ((Y0 - cropTop) * 2) / 3;
+      out.push(`${s.name}: offset ${s.dx},${s.dy}, ${ow}x${oh + GUN_EXTEND} at bg ${X0},${Y0 - cropTop}, view ${vx.toFixed(1)},${vy.toFixed(1)}`);
+      report(maskSrc, file, `${ow}x${oh + GUN_EXTEND} png`);
+    }
+    console.log(`hangar guns: ${out.join('; ')}`);
+  } catch (err) {
+    console.log(`WARNING: failed to build the hangar gun sprites: ${err instanceof Error ? err.message : err}`);
+  }
+}
+
 /** Plain copy of art-src/voice/<lang>/<storyKey>.(wav|mp3|ogg) to public/assets/voice/<lang>/. */
 async function copyVoice() {
   const voiceSrc = path.join(SRC, 'voice');
@@ -606,8 +804,11 @@ async function copyVoice() {
 
 for (const n of BACKGROUNDS) await job(n, `bg/${n}.jpg`, background);
 await job('dash_strip', 'ui/dash.png', dashStrip);
+await hangarGuns();
 for (const n of SHIPS) await job(n, `ships/${n}.png`, chromaKey(SHIP_BOX));
-for (const [n, kind] of Object.entries(CRAWLERS)) await job(n, `crawlers/${kind}.png`, chromaKey(CRAWLER_BOX, { shadows: true }));
+for (const [n, kind] of Object.entries(CRAWLERS)) {
+  await job(n, `crawlers/${kind}.png`, chromaKey(CRAWLER_BOX, { shadows: true, holes: HOLE_KINDS.has(kind) }));
+}
 for (const kind of Object.values(CRAWLERS)) await walkSheet(kind);
 for (const n of PLANETS) await job(n, `planets/${n}.png`, planet);
 for (const n of PORTRAITS) await job(n, `portraits/${n}.jpg`, squareJpeg(384));
@@ -619,6 +820,8 @@ await copyVoice();
 const expected = [
   ...BACKGROUNDS.map((n) => `assets/bg/${n}.jpg`),
   'assets/ui/dash.png',
+  'assets/ui/gun_left.png',
+  'assets/ui/gun_right.png',
   ...Object.values(CRAWLERS).map((kind) => `assets/crawlers/${kind}.png`),
   ...Object.values(CRAWLERS).map((kind) => `assets/crawlers/${kind}_walk.png`),
   ...SHIPS.map((n) => `assets/ships/${n}.png`),

@@ -14,10 +14,14 @@ export const TEX = {
   particle: 'tex-particle',       // 16x16 soft white spark
   laser: 'tex-laser',             // 12x128 vertical beam, white core (tint it)
   vignette: 'tex-vignette',       // 256x256 clear centre, white edges (tint it, stretch to the screen)
+  shade: 'tex-shade',             // 128x128 solid white disc with a long smooth feather (tint dark to hide a spot)
   crawlerScorpion: 'tex-crawler-scorpion', // 256x256 fallback crawlers, front view, feet at ~88 %
   crawlerSpider: 'tex-crawler-spider',
   crawlerCrab: 'tex-crawler-crab',
   crawlerBeetle: 'tex-crawler-beetle',
+  crawlerStalker: 'tex-crawler-stalker',
+  crawlerDrifter: 'tex-crawler-drifter',
+  crawlerWraith: 'tex-crawler-wraith',
 } as const;
 
 /** Fallback texture of each crawler kind (used when crawlers/<kind>.png is missing). */
@@ -26,6 +30,9 @@ export const CRAWLER_FALLBACK = {
   spider: TEX.crawlerSpider,
   crab: TEX.crawlerCrab,
   beetle: TEX.crawlerBeetle,
+  stalker: TEX.crawlerStalker,
+  drifter: TEX.crawlerDrifter,
+  wraith: TEX.crawlerWraith,
 } as const;
 
 type GraphicsDraw = (g: Phaser.GameObjects.Graphics) => void;
@@ -214,6 +221,57 @@ function drawCrawler(ctx: CanvasRenderingContext2D, kind: CrawlerShape): void {
       shell(ctx, 128, 196, 30, 16);
       eyes(ctx, 198, 18, 2);
       break;
+    case 'stalker':
+      // Lean predator on all fours: long arms planted wide, hunched back, red seam down the head.
+      legPair(ctx, 30, 140, 80, 50, 86, 7);
+      legPair(ctx, 22, 186, 30, 6, 40, 9);
+      shell(ctx, 128, 150, 34, 46);
+      shell(ctx, 128, 104, 22, 30);
+      ctx.strokeStyle = 'rgba(255,60,40,0.9)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(128, 76); ctx.lineTo(128, 170); ctx.stroke();
+      break;
+    case 'drifter': {
+      // Hovering machine jellyfish: a ribbed dome with a red core and hanging tentacles.
+      ctx.strokeStyle = LEG; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      for (let i = -4; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(128 + i * 12, 120);
+        ctx.quadraticCurveTo(128 + i * 20, 170, 128 + i * 15 + (i % 2) * 8, 226);
+        ctx.stroke();
+      }
+      shell(ctx, 128, 100, 62, 56);
+      ctx.fillStyle = '#0e0d0b';
+      ctx.fillRect(66, 100, 124, 26);
+      const core = ctx.createRadialGradient(128, 84, 0, 128, 84, 24);
+      core.addColorStop(0, 'rgba(255,90,70,1)');
+      core.addColorStop(0.5, 'rgba(220,30,20,0.85)');
+      core.addColorStop(1, 'rgba(120,0,0,0)');
+      ctx.fillStyle = core;
+      ctx.fillRect(100, 56, 56, 56);
+      break;
+    }
+    case 'wraith': {
+      // Tall headless spiked figure of black liquid on its own pool, red glow in the chest.
+      ctx.fillStyle = '#060606';
+      ctx.beginPath(); ctx.ellipse(128, 222, 92, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(96, 222); ctx.quadraticCurveTo(104, 120, 100, 70); ctx.lineTo(156, 70);
+      ctx.quadraticCurveTo(152, 120, 160, 222); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#0b0b0b'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+      for (const dir of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(128 + dir * 26, 78); ctx.lineTo(128 + dir * 50, 130); ctx.lineTo(128 + dir * 48, 176); ctx.stroke();
+      }
+      ctx.lineWidth = 3;
+      for (let i = -5; i <= 5; i++) {
+        ctx.beginPath(); ctx.moveTo(128 + i * 5, 72); ctx.lineTo(128 + i * 11, 30 + Math.abs(i) * 4); ctx.stroke();
+      }
+      const chest = ctx.createRadialGradient(128, 110, 0, 128, 110, 20);
+      chest.addColorStop(0, 'rgba(230,30,20,0.95)');
+      chest.addColorStop(1, 'rgba(120,0,0,0)');
+      ctx.fillStyle = chest;
+      ctx.fillRect(104, 84, 48, 52);
+      break;
+    }
     case 'scorpion':
     default:
       legPair(ctx, 34, 178, 70, 24, 48, 6);
@@ -273,6 +331,17 @@ export function generateTextures(scene: Phaser.Scene): void {
   if (!has(TEX.vignette)) fromCanvas(scene, TEX.vignette, 256, 256, (ctx) =>
     radial(ctx, 256, [[0, 'rgba(255,255,255,0)'], [0.45, 'rgba(255,255,255,0)'], [0.8, 'rgba(255,255,255,0.55)'],
       [1, 'rgba(255,255,255,1)']]));
+
+  if (!has(TEX.shade)) fromCanvas(scene, TEX.shade, 128, 128, (ctx) => {
+    // Solid to 40 %, then a smoothstep falloff to 0 at the rim (many stops: no visible ring).
+    const stops: Array<[number, string]> = [[0, 'rgba(255,255,255,1)']];
+    for (let i = 0; i <= 12; i++) {
+      const u = i / 12;
+      const a = 1 - u * u * (3 - 2 * u);
+      stops.push([0.4 + 0.6 * u, `rgba(255,255,255,${a.toFixed(3)})`]);
+    }
+    radial(ctx, 128, stops);
+  });
 
   for (const [kind, key] of Object.entries(CRAWLER_FALLBACK) as Array<[CrawlerShape, string]>) {
     if (!has(key)) fromCanvas(scene, key, 256, 256, (ctx) => drawCrawler(ctx, kind));

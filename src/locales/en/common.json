@@ -31,6 +31,7 @@
   "common.settings.sfxVolume": "Sound effects",
   "common.settings.musicVolume": "Music",
   "common.settings.gameSpeed": "Game speed",
+  "common.settings.density": "Density",
   "common.settings.language": "Language",
   "common.settings.keypadAlwaysVisible": "Always show keypad",
   "common.settings.resetProgress": "Reset progress",
@@ -49,7 +50,5 @@
   "common.pageNext": "›",
   "common.decrease": "−",
   "common.increase": "+",
-  "common.speed.slow": "Slow",
-  "common.speed.normal": "Normal",
-  "common.speed.fast": "Fast"
+  "common.multiplier": "×{value}"
 }

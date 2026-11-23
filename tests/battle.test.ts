@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ARMED_CHANCE, BOARDING_KILL_POINTS, BattleSim, DOME_X, EXPLAIN_MS, FIRE_LINE_Y, HULL_MAX, IMPACT_Y, LANE_X,
   MAX_ALIVE, MISSION_WAVES, SPAWN_Y, WAVE_START_DELAY_MS, armedChance, baseSpeed, chargeMs, enemiesInWave,
-  spawnIntervalMs,
+  maxAlive as maxAliveFor, spawnIntervalMs,
 } from '../src/core/battle';
 import { BOARDING_CRAWLERS, BoardingSim } from '../src/core/boarding';
 import type { BattleConfig, BattleEvent, Enemy } from '../src/core/battle';
@@ -188,9 +188,53 @@ describe('BattleSim pacing', () => {
     expect(baseSpeed(2, 0.75)).toBeCloseTo(19.5);
     expect(baseSpeed(1, 1.25)).toBeCloseTo(28.75);
     expect(MAX_ALIVE).toBe(4);
+    expect(spawnIntervalMs(1, 0.5)).toBe(6700);
   });
 
-  for (const scale of [0.75, 1, 1.25]) {
+  it('density formulas: interval / density, max alive 2 / 3 / 4 / 5', () => {
+    expect([0.5, 0.75, 1, 1.25].map((d) => maxAliveFor(d))).toEqual([2, 3, 4, 5]);
+    expect(maxAliveFor()).toBe(MAX_ALIVE);
+    expect(spawnIntervalMs(1, 1, 0.5)).toBe(6700);
+    expect(spawnIntervalMs(1, 1, 1.25)).toBe(2680);
+    expect(spawnIntervalMs(1, 0.5, 0.5)).toBe(13400);
+    expect(spawnIntervalMs(8, 1, 0.75)).toBeCloseTo(2400);
+  });
+
+  for (const density of [0.5, 0.75, 1, 1.25]) {
+    it(`density ${density}: spawn gap 3350 / density, max alive ${Math.round(4 * density)}, 8 enemies per wave`, () => {
+      const cap = maxAliveFor(density);
+      const sim = new BattleSim(cfg({ density, stats: Object.fromEntries(sectorFacts('type-1').map((f) => [f.id, stat(2)])) }));
+      const spawns: Enemy[] = [];
+      let peak = 0;
+      for (let i = 0; i < 20000 && sim.state.phase !== 'waveCleared'; i++) {
+        for (const x of advance(sim, 10)) if (x.type === 'spawn') spawns.push(x.enemy);
+        expect(sim.state.enemies.length).toBeLessThanOrEqual(cap);
+        peak = Math.max(peak, sim.state.enemies.length);
+        if (sim.state.phase === 'explaining') sim.update(EXPLAIN_MS);
+        // answer only at the cap, so the cap is reached and held
+        if (sim.state.enemies.length >= cap) answer(sim, lowestEnemy(sim).fact.answer);
+        if (sim.state.phase === 'lost') break;
+      }
+      expect(peak).toBe(cap);
+      expect(spawns).toHaveLength(enemiesInWave(1));
+      const gap = spawns[1].spawnedAt - spawns[0].spawnedAt;
+      expect(gap).toBeGreaterThanOrEqual(3350 / density - 1e-6);
+      expect(gap).toBeLessThan(3350 / density + 10);
+    });
+  }
+
+  it('falls back to density 1 for an invalid value', () => {
+    for (const density of [Number.NaN, 0, -1]) {
+      const sim = new BattleSim(cfg({ density }));
+      const spawns: Enemy[] = [];
+      for (let i = 0; i < 2000 && spawns.length < 2; i++) {
+        for (const e of sim.update(10)) if (e.type === 'spawn') spawns.push(e.enemy);
+      }
+      expect(spawns[1].spawnedAt - spawns[0].spawnedAt).toBeLessThan(3350 + 10);
+    }
+  });
+
+  for (const scale of [0.5, 0.75, 1, 1.25]) {
     it(`speedScale ${scale} scales enemy speed and spawn interval`, () => {
       const sim = new BattleSim(cfg({ speedScale: scale }));
       const spawns: Enemy[] = [];

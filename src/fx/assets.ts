@@ -23,6 +23,9 @@ export const IMG = {
   },
   ui: {
     dash: 'ui_dash',            // 1920 px wide dashboard strip, transparent above the console
+    /** Foreground hangar guns (background-space px, boardingLayout GUNS). */
+    gunLeft: 'ui_gun_left',
+    gunRight: 'ui_gun_right',
   },
   /** Boarding crawlers by kind, 512x512 with transparency (front view). */
   crawlers: {
@@ -30,6 +33,9 @@ export const IMG = {
     spider: 'crawler_spider',
     crab: 'crawler_crab',
     beetle: 'crawler_beetle',
+    stalker: 'crawler_stalker',
+    drifter: 'crawler_drifter',
+    wraith: 'crawler_wraith',
   },
   /** Walk cycles: 4x4 spritesheets of 256 px cells, 16 frames looping (crawlers/<kind>_walk.png). */
   crawlerWalk: {
@@ -37,6 +43,9 @@ export const IMG = {
     spider: 'crawler_spider_walk',
     crab: 'crawler_crab_walk',
     beetle: 'crawler_beetle_walk',
+    stalker: 'crawler_stalker_walk',
+    drifter: 'crawler_drifter_walk',
+    wraith: 'crawler_wraith_walk',
   },
   ships: {
     enemyA: 'ship_enemy_a',
@@ -73,6 +82,8 @@ const ENEMY_SHIPS = [IMG.ships.enemyA, IMG.ships.enemyB, IMG.ships.enemyC] as co
 export const ASSET_URLS: Readonly<Record<string, string>> = {
   ...Object.fromEntries(Object.values(IMG.bg).map((k) => [k, `assets/bg/${k}.jpg`])),
   [IMG.ui.dash]: 'assets/ui/dash.png',
+  [IMG.ui.gunLeft]: 'assets/ui/gun_left.png',
+  [IMG.ui.gunRight]: 'assets/ui/gun_right.png',
   ...Object.fromEntries(Object.entries(IMG.crawlers).map(([kind, k]) => [k, `assets/crawlers/${kind}.png`])),
   ...Object.fromEntries(Object.values(IMG.ships).map((k) => [k, `assets/ships/${k}.png`])),
   ...Object.fromEntries(IMG.planets.map((k) => [k, `assets/planets/${k}.png`])),

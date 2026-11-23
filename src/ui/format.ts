@@ -5,6 +5,11 @@ export function percentText(i18n: I18n, fraction: number): string {
   return i18n.t('common.percent', { value: Math.round(fraction * 100) });
 }
 
+/** A setting multiplier with the locale's decimal separator ("×0,75" / "×0.75"). */
+export function multiplierText(i18n: I18n, v: number): string {
+  return i18n.t('common.multiplier', { value: String(v).replace('.', i18n.t('common.decimalSeparator')) });
+}
+
 /** Milliseconds as seconds with one decimal and the locale's decimal separator ("2,4 s"). */
 export function secondsText(i18n: I18n, ms: number): string {
   const value = (ms / 1000).toFixed(1).replace('.', i18n.t('common.decimalSeparator'));

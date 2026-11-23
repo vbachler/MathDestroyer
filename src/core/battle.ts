@@ -22,7 +22,10 @@ export const DOME_X = [240, 507, 773, 1040];
 export const LANE_CLEAR_Y = 200;
 
 // ---- Rules ----
+/** Enemies alive at once at the default density (1). */
 export const MAX_ALIVE = 4;
+/** Enemies alive at once for a density: 2 / 3 / 4 / 5 for 0.5 / 0.75 / 1 / 1.25. */
+export const maxAlive = (density = 1): number => Math.max(1, Math.round(MAX_ALIVE * density));
 export const EXPLAIN_MS = 2500;
 export const BASE_DOME_HP = 2;
 export const MAX_INPUT_DIGITS = 4;
@@ -51,7 +54,8 @@ export const BOARDING_CRAWLERS = 8;
 export const ARMED_CHANCE: readonly number[] = [0.25, 0.35, 0.45];
 
 export const enemiesInWave = (w: number): number => 6 + 2 * w;
-export const spawnIntervalMs = (w: number, speedScale = 1): number => Math.max(1800, 3600 - 250 * w) / speedScale;
+export const spawnIntervalMs = (w: number, speedScale = 1, density = 1): number =>
+  Math.max(1800, 3600 - 250 * w) / speedScale / density;
 export const baseSpeed = (w: number, speedScale = 1): number => (20 + 3 * w) * speedScale;
 export const armedChance = (w: number): number => ARMED_CHANCE[Math.min(Math.max(1, w), ARMED_CHANCE.length) - 1];
 /** Time an armed enemy needs from charge 0 to firing. */
@@ -124,8 +128,11 @@ export interface BattleConfig {
   modules: Record<string, number>;            // station modules owned: moduleId -> tier
   now: number;                                // epoch ms at mission start
   seed: number;
-  /** settings.gameSpeed (0.75 | 1 | 1.25) times the planet's tier factor (tierSpeedFactor). */
+  /** settings.gameSpeed (0.5 | 0.75 | 1 | 1.25) times the planet's tier factor (tierSpeedFactor). */
   speedScale: number;
+  /** settings.density (0.5 | 0.75 | 1 | 1.25), default 1: spawn interval / density, max alive maxAlive(density).
+   *  Enemies per wave do not change. */
+  density?: number;
 }
 
 /** "Lowest" enemy = closest to the planet = greatest y (ties: oldest id). */
@@ -143,6 +150,8 @@ export class BattleSim {
   private readonly rng: Rng;
   private readonly targetingMult: number;
   private readonly speedScale: number;
+  private readonly density: number;
+  private readonly maxAlive: number;
   private effects: UpgradeEffects;
   private readonly scheduler: MissionScheduler;
   private queue: Fact[] = [];
@@ -160,8 +169,11 @@ export class BattleSim {
   constructor(cfg: BattleConfig) {
     this.config = cfg;
     this.rng = createRng(cfg.seed);
-    // Guard against a missing or nonsensical value; normal values are 0.75 / 1 / 1.25.
+    // Guard against a missing or nonsensical value; normal values are 0.5 / 0.75 / 1 / 1.25.
     this.speedScale = Number.isFinite(cfg.speedScale) && cfg.speedScale > 0 ? cfg.speedScale : 1;
+    const d = cfg.density ?? 1;
+    this.density = Number.isFinite(d) && d > 0 ? d : 1;
+    this.maxAlive = maxAlive(this.density);
     this.targetingMult = targetingMultiplier(moduleTier(cfg.modules, 'targeting'));
     const maxHp = BASE_DOME_HP + hullBonusHp(moduleTier(cfg.modules, 'hull'));
     this.state = {
@@ -293,7 +305,7 @@ export class BattleSim {
     const s = this.state;
     if (this.queueIndex >= this.queue.length) return;
     this.spawnTimerMs = Math.max(0, this.spawnTimerMs - dt);
-    if (this.spawnTimerMs > 0 || s.enemies.length >= MAX_ALIVE) return;
+    if (this.spawnTimerMs > 0 || s.enemies.length >= this.maxAlive) return;
     const free = LANE_X.map((_, i) => i)
       .filter((lane) => !s.enemies.some((e) => e.lane === lane && e.y <= LANE_CLEAR_Y));
     if (free.length === 0) return;
@@ -315,7 +327,7 @@ export class BattleSim {
       charge: 0,
     };
     s.enemies.push(enemy);
-    this.spawnTimerMs = spawnIntervalMs(s.wave, this.speedScale);
+    this.spawnTimerMs = spawnIntervalMs(s.wave, this.speedScale, this.density);
     ev.push({ type: 'spawn', enemy });
   }
 

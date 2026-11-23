@@ -11,9 +11,11 @@ import { beam, flash, shipExplosion, sparks } from '../fx/BattleFx';
 import { KEY_GAP, KEYPAD_DIGITS, KEYPAD_FIRE, layoutTags, PAUSE_RECT } from '../fx/battleLayout';
 import type { Point, TagItem, TagSide } from '../fx/battleLayout';
 import {
-  approach, boardingMissPoint, DOOR_Y, HORIZON_Y, MUZZLE_LEFT, MUZZLE_RIGHT, READOUT,
+  approach, BEACONS, boardingMissPoint, crackleGate, DOOR_Y, HORIZON_Y, READOUT, SPARK_LAMPS,
 } from '../fx/boardingLayout';
 import { Crawler } from '../fx/Crawler';
+import { HangarGuns } from '../fx/HangarGuns';
+import { LampFlicker } from '../fx/LampFlicker';
 import { TEX } from '../fx/textures';
 import { Button } from '../ui/Button';
 import { addHitZone } from '../ui/hitZone';
@@ -27,6 +29,8 @@ export interface BoardingSceneData {
   facts: Fact[];
   seed: number;
   speedScale: number;
+  /** settings.density (default 1), forwarded to BoardingSim. */
+  density?: number;
   /** Called once when the fight ends (the scene stops itself right after). */
   onDone: (result: BoardingResult) => void;
 }
@@ -38,10 +42,6 @@ const TITLE_MS = 1100;
 const REPELLED_MS = 1400;
 const OVERRUN_MS = 1300;
 const WRONG_SOUND_DELAY_MS = 200;
-/** Red warning lamps painted in the hangar picture (view coords): their glow pulses. */
-const BEACONS: readonly Point[] = [
-  { x: 265, y: 387 }, { x: 475, y: 360 }, { x: 809, y: 360 }, { x: 895, y: 370 }, { x: 1032, y: 387 },
-];
 const BEACON_PERIOD_MS = 1300;
 /** Darkness over the hangar: base level, and the depth of a failing-light dip. */
 const DARK_BASE = 0.1;
@@ -64,6 +64,10 @@ export class BoardingScene extends Phaser.Scene {
   private dark: Phaser.GameObjects.Rectangle | null = null;
   private wash: Phaser.GameObjects.Rectangle | null = null;
   private beacons: Phaser.GameObjects.Image[] = [];
+  private lamps: LampFlicker | null = null;
+  private guns: HangarGuns | null = null;
+  /** Scene clock of the last lamp crackle (sound rationed by crackleGate). */
+  private crackleAt = -Infinity;
   private inputText!: Phaser.GameObjects.Text;
   private caret!: Phaser.GameObjects.Rectangle;
   private pips!: Phaser.GameObjects.Graphics;
@@ -80,11 +84,14 @@ export class BoardingScene extends Phaser.Scene {
   }
 
   create(data: BoardingSceneData): void {
-    this.sim = new BoardingSim({ facts: data.facts, seed: data.seed, speedScale: data.speedScale });
+    this.sim = new BoardingSim({ facts: data.facts, seed: data.seed, speedScale: data.speedScale, density: data.density });
     this.onDone = data.onDone;
     this.crawlers = new Map();
     this.tagSides = new Map();
     this.beacons = [];
+    this.lamps = null;
+    this.guns = null;
+    this.crackleAt = -Infinity;
     this.pipSig = '';
     this.pauseOverlay = null;
     this.paused = false;
@@ -95,6 +102,7 @@ export class BoardingScene extends Phaser.Scene {
 
     this.cameras.main.setBackgroundColor(COLORS.bg);
     this.buildHangar();
+    this.guns = new HangarGuns(this);
     this.buildLights();
     this.buildReadout();
     this.buildPauseGlyph();
@@ -107,6 +115,7 @@ export class BoardingScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(350, 0, 0, 0);
     app.sfx.screech(0.5);
+    app.sfx.startHangar();
     this.showBanner(app.i18n.t('battle.boarding'), TITLE_MS, COLORS.danger);
     this.renderHud();
   }
@@ -117,7 +126,9 @@ export class BoardingScene extends Phaser.Scene {
     if (live) this.handleEvents(this.sim.step(dt));
     this.clockMs += dt;
     this.animateLights(dt);
+    this.lamps?.update(this.paused ? 0 : dt);
     this.renderCrawlers(live ? dt : 0);
+    this.guns?.update(this.paused ? 0 : dt, this.nearestCrawler()?.centre ?? null);
     this.renderHud();
     this.playSkitter(live ? dt : 0);
   }
@@ -128,9 +139,16 @@ export class BoardingScene extends Phaser.Scene {
     if (hasImage(this, IMG.bg.hangar)) {
       const img = this.add.image(CX, GAME_HEIGHT / 2, IMG.bg.hangar).setDepth(DEPTH.background);
       img.setScale(Math.max(GAME_WIDTH / img.width, GAME_HEIGHT / img.height));
+      // Failing strip lights painted into the picture: just above it, below beacons and crawlers.
+      // Only now and then a flash crackles (crackleGate): on every one it would be too much.
+      this.lamps = new LampFlicker(this, SPARK_LAMPS, DEPTH.background + 1, (lamp) => {
+        if (!crackleGate(this.clockMs, this.crackleAt, Math.random())) return;
+        this.crackleAt = this.clockMs;
+        app.sfx.sparkCrackle(0.5 + 0.5 * lamp.size);
+      });
       return;
     }
-    // Fallback: a dark corridor in the same perspective, the door and the two barrels.
+    // Fallback: a dark corridor in the same perspective and the door (the guns are HangarGuns).
     const g = this.add.graphics().setDepth(DEPTH.background);
     g.fillStyle(0x07090c, 1);
     g.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
@@ -143,14 +161,6 @@ export class BoardingScene extends Phaser.Scene {
     for (let k = 1; k <= 8; k++) {
       const y = HORIZON_Y + (GAME_HEIGHT - HORIZON_Y) * (k / 8) ** 2;
       if (y > DOOR_Y) g.lineBetween(0, y, GAME_WIDTH, y);
-    }
-    g.fillStyle(0x0a0b0d, 1);
-    for (const m of [MUZZLE_LEFT, MUZZLE_RIGHT]) {
-      const dir = m.x < CX ? -1 : 1;
-      g.fillPoints([
-        new Phaser.Math.Vector2(m.x - 14, m.y), new Phaser.Math.Vector2(m.x + 14, m.y),
-        new Phaser.Math.Vector2(m.x + 60 + dir * 40, GAME_HEIGHT), new Phaser.Math.Vector2(m.x - 60 + dir * 40, GAME_HEIGHT),
-      ], true);
     }
   }
 
@@ -261,13 +271,20 @@ export class BoardingScene extends Phaser.Scene {
     if (Math.random() < 0.45) this.time.delayedCall(Phaser.Math.Between(150, 600), () => app.sfx.screech(0.35));
   }
 
-  /** Both barrels fire, converging on `to`. */
+  /** Both barrels snap onto `to`, kick back and fire from their rotated muzzle tips. */
   private fireGuns(to: Point, miss: boolean): void {
-    for (const m of [MUZZLE_LEFT, MUZZLE_RIGHT]) {
+    for (const m of this.guns?.fire(to) ?? []) {
       beam(this, m, to, COLORS.primary, { width: 0.6, fadeInto: miss });
       flash(this, m.x, m.y, COLORS.primary, 46, 160);
     }
     app.sfx.turretShot();
+  }
+
+  /** The crawler view nearest the guns (smallest z), or null. */
+  private nearestCrawler(): Crawler | null {
+    let nearest: Crawler | null = null;
+    for (const v of this.crawlers.values()) if (!nearest || v.depthZ < nearest.depthZ) nearest = v;
+    return nearest;
   }
 
   private onKill(c: CrawlerState): void {
@@ -284,8 +301,7 @@ export class BoardingScene extends Phaser.Scene {
   }
 
   private onWrong(): void {
-    let nearest: Crawler | null = null;
-    for (const v of this.crawlers.values()) if (!nearest || v.depthZ < nearest.depthZ) nearest = v;
+    const nearest = this.nearestCrawler();
     const aim = boardingMissPoint(nearest ? nearest.centre : null, Math.random());
     this.fireGuns(aim, true);
     this.time.delayedCall(WRONG_SOUND_DELAY_MS, () => app.sfx.wrong());
@@ -312,12 +328,14 @@ export class BoardingScene extends Phaser.Scene {
   }
 
   private onRepelled(): void {
+    app.sfx.stopHangar(REPELLED_MS / 1000);
     this.showBanner(app.i18n.t('battle.banner.waveCleared'), REPELLED_MS, COLORS.ok);
     this.time.delayedCall(REPELLED_MS, () => this.finish(true));
   }
 
   private onOverrun(): void {
     this.closePause();
+    app.sfx.stopHangar(OVERRUN_MS / 1000);
     const black = this.add.rectangle(CX, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0).setDepth(DEPTH.overlay + 5);
     this.tweens.add({ targets: black, alpha: 1, delay: 450, duration: OVERRUN_MS - 450 });
     this.time.delayedCall(OVERRUN_MS, () => this.finish(false));
@@ -446,6 +464,7 @@ export class BoardingScene extends Phaser.Scene {
     if (this.finished || this.sim.state.phase !== 'fighting') return;
     this.paused = true;
     this.tweens.pauseAll();
+    app.sfx.stopHangar(0.5);
     const { t } = app.i18n;
     const cy = GAME_HEIGHT / 2 - 40;
     const overlay = this.add.container(0, 0).setDepth(DEPTH.overlay + 10);
@@ -461,7 +480,10 @@ export class BoardingScene extends Phaser.Scene {
   }
 
   private closePause(): void {
-    if (this.paused) this.tweens.resumeAll();
+    if (this.paused) {
+      this.tweens.resumeAll();
+      if (!this.finished && this.sim.state.phase === 'fighting') app.sfx.startHangar();
+    }
     this.paused = false;
     this.pauseOverlay?.destroy();
     this.pauseOverlay = null;
@@ -482,9 +504,14 @@ export class BoardingScene extends Phaser.Scene {
     this.events.off(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
     this.events.off(Phaser.Scenes.Events.DESTROY, this.onShutdown, this);
     app.sfx.setTension(0);
+    app.sfx.stopHangar(0.6);
+    this.guns?.destroy();
+    this.guns = null;
     this.crawlers.clear();
     this.tagSides.clear();
     this.beacons = [];
+    this.lamps?.destroy();
+    this.lamps = null;
     this.dark = null;
     this.wash = null;
     this.pauseOverlay = null;

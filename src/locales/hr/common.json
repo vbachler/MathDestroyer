@@ -31,6 +31,7 @@
   "common.settings.sfxVolume": "Zvučni efekti",
   "common.settings.musicVolume": "Glazba",
   "common.settings.gameSpeed": "Brzina igre",
+  "common.settings.density": "Gustoća",
   "common.settings.language": "Jezik",
   "common.settings.keypadAlwaysVisible": "Uvijek prikaži tipkovnicu",
   "common.settings.resetProgress": "Izbriši napredak",
@@ -49,7 +50,5 @@
   "common.pageNext": "›",
   "common.decrease": "−",
   "common.increase": "+",
-  "common.speed.slow": "Sporo",
-  "common.speed.normal": "Normalno",
-  "common.speed.fast": "Brzo"
+  "common.multiplier": "×{value}"
 }

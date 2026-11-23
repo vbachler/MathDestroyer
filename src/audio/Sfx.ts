@@ -68,6 +68,7 @@ export class Sfx {
   private ftlVoice: Voice | null = null;
   private wantedAmbience: AmbienceKind | null = null;
   private tension = 0;
+  private wantedHangar = false;
 
   /**
    * @param volume  effects volume 0..1 (settings.sfxVolume)
@@ -138,6 +139,52 @@ export class Sfx {
   setTension(level: number): void {
     this.tension = level;
     this.ambience?.setTension(level);
+  }
+
+  /**
+   * Boarding hangar ambience (audio/Hangar.ts) layered over the current bed on the music bus:
+   * unstable drone, hull creaks and groans, distant thuds, drips, a far screech now and then.
+   * Deferred until audio is unlocked, like the beds.
+   */
+  startHangar(): void {
+    this.wantedHangar = true;
+    this.applyAmbience();
+  }
+
+  /** Fades the hangar layer out (boarding ended, paused or shut down). */
+  stopHangar(fadeSec = 1.2): void {
+    this.wantedHangar = false;
+    try {
+      this.ambience?.stopHangar(fadeSec);
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * A failing strip light crackles: a short burst of sharp electric grains (2.5-7 kHz) over a
+   * tiny 100 Hz buzz, 80-160 ms, quiet. The boarding scene rations it (not every flash).
+   */
+  sparkCrackle(level = 1): void {
+    const v = this.begin(Prio.Ui, 0.32 * Math.min(1, Math.max(0, level)), 0.5);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      const len = rnd(0.08, 0.16);
+      const cr = v.gain(0);
+      const bp = v.filter('bandpass', 4000, 3);
+      v.chain(v.noise('white', t, t + len + 0.02), bp, v.filter('highpass', 1800, 0.7), cr, v.out);
+      for (let s = t; s < t + len;) {
+        const g = rnd(0.002, 0.008);
+        bp.frequency.setValueAtTime(rnd(2500, 7000), s);
+        v.grain(cr.gain, s, rnd(0.2, 0.55), g);
+        s += g + rnd(0.004, 0.025);
+      }
+      const buzz = v.osc('sawtooth', 100, t, t + len + 0.02);
+      const bg = v.gain(0);
+      v.env(bg.gain, t, 0.004, 0.035, t + len);
+      v.chain(buzz, v.filter('bandpass', 600, 2), bg, v.out);
+    });
   }
 
   // ================================================================== weapons
@@ -326,6 +373,66 @@ export class Sfx {
       const tg = v.gain(0);
       v.env(tg.gain, t, 0.004, 0.4, t + 0.25);
       v.chain(thump, tg, v.out);
+    });
+  }
+
+  /**
+   * A station is destroyed: a deep, muffled boom heard through the hull (sine 62 -> 22 Hz + brown
+   * noise under a 450 Hz low-pass) with a secondary detonation 0.2 s later, then the structure
+   * coming apart: metal tearing (saw with random pitch jerks sagging 170 -> ~55 Hz, grit, a
+   * band-pass sweeping down), a slow inharmonic hull groan bending flat, a crumbling rattle that
+   * thins out over ~1.8 s, and a few distant metal pings left hanging in the reverb. ~2.6 s.
+   */
+  stationDestroyed(): void {
+    const v = this.begin(Prio.Weapon, 1, 0.5);
+    if (!v) return;
+    this.safely(() => {
+      const t = v.t0;
+      const r = rnd(0.94, 1.06);
+      this.boom(v, t, 62 * r, 22, 1.3, 0.85, 450, 0.8);
+      this.boom(v, t + 0.2, 88 * r, 30, 0.5, 0.35, 380, 0.35);
+
+      // Tearing metal.
+      const ts = t + 0.12;
+      const te = t + 1.9;
+      const tear = v.osc('sawtooth', 170 * r, ts, te + 0.05);
+      for (let s = ts; s < te - 0.05; s += rnd(0.025, 0.08)) {
+        tear.frequency.setValueAtTime(rnd(90, 170) * r * (1 - 0.6 * (s - ts) / (te - ts)), s);
+      }
+      const tbp = v.filter('bandpass', 900, 2.5);
+      v.sweep(tbp.frequency, ts, 900, 260, te);
+      const tg = v.gain(0);
+      v.env(tg.gain, ts, 0.18, 0.2, te);
+      v.chain(tear, v.shaper(3), tbp, v.filter('lowpass', 1300, 2), tg, v.out);
+      v.send(tg, 0.4);
+
+      // Hull groan: low inharmonic partials sagging as the frame gives way.
+      const groan = v.gain(1);
+      [0.08, 0.045, 0.025].forEach((amp, i) => {
+        const f = 96 * r * BAR_MODES[i];
+        const dec = [2.2, 1.6, 1.1][i];
+        const o = v.osc('sine', f, t + 0.05, t + 0.05 + dec + 0.05);
+        v.sweep(o.frequency, t + 0.05, f, f * 0.9, t + 0.05 + dec);
+        const g = v.gain(0);
+        v.env(g.gain, t + 0.05, 0.08, amp, t + 0.05 + dec);
+        v.chain(o, g, groan);
+      });
+      groan.connect(v.out);
+      v.send(groan, 0.9);
+
+      // Crumbling debris, darker than a ship's.
+      this.debris(v, t + 0.25, 1.8, 300, 1700, 1);
+
+      // Distant pings of loose plates.
+      for (let k = 0; k < 3; k++) {
+        const s = t + rnd(0.8, 2.3);
+        const f = rnd(700, 1500);
+        const o = v.osc('sine', f, s, s + 0.5);
+        const g = v.gain(0);
+        v.env(g.gain, s, 0.002, rnd(0.015, 0.03), s + 0.45);
+        v.chain(o, g, v.out);
+        v.send(g, 1.2);
+      }
     });
   }
 
@@ -1127,6 +1234,7 @@ export class Sfx {
       } else if (this.ambience.kind) {
         this.ambience.stop(1.5);
       }
+      if (this.wantedHangar) this.ambience.startHangar();
     } catch {
       // ignore
     }

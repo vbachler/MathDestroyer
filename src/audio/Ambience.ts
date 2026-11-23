@@ -1,5 +1,6 @@
 import { alienChatter } from './chatter';
 import { Voice, rnd } from './dsp';
+import { HangarBed } from './Hangar';
 import type { Buffers, Bus } from './dsp';
 import { Tension } from './Tension';
 
@@ -64,6 +65,7 @@ export class Ambience {
   private current: Bed | null = null;
   private volumeTimer: ReturnType<typeof setInterval> | null = null;
   private lastVolume = -1;
+  private hangar: HangarBed | null = null;
 
   /** `music` / `musicWet`: the dry and reverb-send gains of the music bus; both follow the music volume. */
   constructor(ctx: BaseAudioContext, music: GainNode, musicWet: GainNode, buffers: Buffers, volume: () => number) {
@@ -90,12 +92,37 @@ export class Ambience {
   stop(fadeSec = 1.5): void {
     if (this.current) this.retire(this.current, Math.max(0.05, fadeSec));
     this.current = null;
+    if (this.hangar) return; // the hangar layer still needs the volume poll
     if (this.volumeTimer !== null) clearInterval(this.volumeTimer);
     this.volumeTimer = null;
   }
 
   setTension(level: number): void {
     this.current?.tension?.setTarget(level);
+  }
+
+  /**
+   * Boarding hangar layer (HangarBed) over whatever bed plays. Same again is a no-op. It follows
+   * the music volume; the volume poll runs while it plays even without a bed.
+   */
+  startHangar(): void {
+    if (this.hangar) return;
+    this.syncVolume(true);
+    this.hangar = new HangarBed(this.bus);
+    if (this.volumeTimer === null) this.volumeTimer = setInterval(() => this.syncVolume(false), 400);
+  }
+
+  stopHangar(fadeSec = 1.2): void {
+    this.hangar?.stop(fadeSec);
+    this.hangar = null;
+    if (!this.current && this.volumeTimer !== null) {
+      clearInterval(this.volumeTimer);
+      this.volumeTimer = null;
+    }
+  }
+
+  get hangarPlaying(): boolean {
+    return this.hangar !== null;
   }
 
   /** One-off distant event on the music bus (e.g. chatter while viewing a hostile planet). */
