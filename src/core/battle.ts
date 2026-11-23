@@ -39,11 +39,11 @@ export const REPAIR_STREAK = 10;
 
 // ---- Attack and boarding (v6) ----
 /** An armed enemy charges its laser while its y is at or below this line. */
-export const FIRE_LINE_Y = 330;
+export const FIRE_LINE_Y = 90;
 /** Hull points of the player's ship; at 0 the ship is boarded. */
-export const HULL_MAX = 3;
+export const HULL_MAX = 2;
 /** Charge time of an enemy laser at speedScale 1. */
-export const CHARGE_MS = 4000;
+export const CHARGE_MS = 6000;
 /** Tolerance for the sum of sub-step charge increments (floating point). */
 const CHARGE_EPSILON = 1e-9;
 /** Points (and kills) per crawler destroyed in a boarding. */
@@ -51,7 +51,7 @@ export const BOARDING_KILL_POINTS = 10;
 /** Crawlers per boarding (also exported by core/boarding). */
 export const BOARDING_CRAWLERS = 8;
 /** Chance that an enemy is armed, by wave (index 0 = wave 1); later waves use the last value. */
-export const ARMED_CHANCE: readonly number[] = [0.25, 0.35, 0.45];
+export const ARMED_CHANCE: readonly number[] = [0.4, 0.5, 0.6];
 
 export const enemiesInWave = (w: number): number => 6 + 2 * w;
 export const spawnIntervalMs = (w: number, speedScale = 1, density = 1): number =>

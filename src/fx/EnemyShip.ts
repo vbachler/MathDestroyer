@@ -131,10 +131,12 @@ export class EnemyShip extends Phaser.GameObjects.Container {
     }
     const c = Math.min(1, Math.max(0, charge));
     const flicker = 0.85 + 0.15 * Math.sin(this.glowPhase * 3.1);
+    // Charging starts high on the screen where ships are small (v9): the glow has a visible
+    // floor from the first moment and grows over the whole charge.
     this.noseGlow.setVisible(true)
       .setPosition(0, this.size * NOSE)
-      .setScale((this.size * (0.35 + 1.1 * c)) / 128)
-      .setAlpha((0.35 + 0.6 * c) * flicker);
+      .setScale((this.size * (0.6 + 1.0 * c)) / 128)
+      .setAlpha((0.5 + 0.45 * c) * flicker);
     const g = this.aim;
     if (c < AIM_FROM_CHARGE) {
       g.setVisible(false);

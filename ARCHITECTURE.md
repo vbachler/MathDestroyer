@@ -960,13 +960,13 @@ laser turret by solving problems. Text budget rules still apply: no sentences on
 ### Core: armed enemies and hull (`core/battle.ts`)
 
 - `Enemy` gains `armed: boolean` and `charge: number` (0..1). An enemy is armed with chance
-  0.25 / 0.35 / 0.45 in waves 1 / 2 / 3 (drawn from the sim Rng at spawn); the first enemy of
-  a mission is never armed.
-- An armed enemy with `y >= FIRE_LINE_Y` (330) charges: `charge += dt / CHARGE_MS`, with
-  `CHARGE_MS = 4000 / speedScale`. At 1 it fires: event `{ type: 'shipHit'; enemy; hull }`,
-  `state.hull -= 1`, `charge = 0` (it charges again while alive). Charging stops in every
-  phase except `spawning`.
-- `BattleState` gains `hull` (starts at `HULL_MAX = 3`), `hullMax`, `boardings` (count).
+  `ARMED_CHANCE` = 0.4 / 0.5 / 0.6 in waves 1 / 2 / 3 (v9; drawn from the sim Rng at spawn);
+  the first enemy of a mission is never armed.
+- An armed enemy with `y >= FIRE_LINE_Y` (90, v9) charges: `charge += dt / chargeMs(speedScale)`,
+  with `chargeMs = CHARGE_MS / speedScale` and `CHARGE_MS = 6000` (v9). At 1 it fires: event
+  `{ type: 'shipHit'; enemy; hull }`, `state.hull -= 1`, `charge = 0` (it charges again while
+  alive). Charging stops in every phase except `spawning`.
+- `BattleState` gains `hull` (starts at `HULL_MAX = 2`, v9), `hullMax`, `boardings` (count).
 - When `hull` reaches 0: phase `'boarding'` (new `BattlePhase`), event `{ type: 'breach' }`.
   In `'boarding'` `step` and all input methods do nothing.
 - `sim.boardingFacts(n = BOARDING_CRAWLERS): Fact[]` draws problems from the mission
@@ -1020,7 +1020,7 @@ two crawlers on the same lane closer than 0.25 in z. Records use the same outcom
   with `charge`, plus a hairline red aiming line to the cockpit in the last quarter. On
   `shipHit`: a thick red beam from the ship to the bottom centre, camera shake (about 250 ms),
   a red vignette flash, the dashboard flickers, `Sfx.enemyLaser()` + `Sfx.hullHit()`. Hull is
-  shown as three small pips on the dashboard (glyph, at most one short label word).
+  shown as `hullMax` small pips on the dashboard (glyph, at most one short label word).
   On `breach`: alarm, long shake, white-red flash, then `scene.pause()` and
   `scene.launch('Boarding', { facts, seed, speedScale, onDone })`; `onDone` calls
   `sim.resolveBoarding` and resumes the battle or ends the mission as lost.
@@ -1044,7 +1044,7 @@ two crawlers on the same lane closer than 0.25 in z. Records use the same outcom
 
 - `BOARDING_CRAWLERS` lives in `battle.ts` and is re-exported by `boarding.ts` (no import cycle:
   `boarding.ts` takes `MAX_INPUT_DIGITS` / `MAX_STEP_MS` / `AnswerRecord` from `battle.ts`).
-  Extra exports: `CHARGE_MS`, `ARMED_CHANCE`, `armedChance(w)` (waves beyond 3 use 0.45),
+  Extra exports: `CHARGE_MS`, `ARMED_CHANCE`, `armedChance(w)` (waves beyond 3 use the last value, 0.6 since v9),
   `BoardingResult`; `CRAWLER_KINDS`, `BOARDING_FIRST_SPAWN_MS` (1200, not scaled, like
   `WAVE_START_DELAY_MS`), `LANE_GAP_Z`, `BOARDING_LANES`, `BoardingConfig`.
 - Per step: move, impacts, then charge (so an enemy that lands this step never fires); overshoot
@@ -1104,3 +1104,23 @@ two crawlers on the same lane closer than 0.25 in z. Records use the same outcom
   thuds, drips, a rare far screech; everything through one gain, faded by `Sfx.stopHangar(fade)` on
   pause (restarted on resume), repelled, overrun and shutdown. `Sfx.sparkCrackle()` (sfx bus, UI
   priority) on lamp flashes only when `crackleGate` allows: chance 0.22 and never within 1.5 s.
+
+## v9: more frequent attacks
+
+Reason: players almost never got shot at or boarded. Charging began at sim y 330 (~14 s after
+spawn at wave-1 speed, longer at game speed 0.5) and took 4 s more, so enemies died first.
+Balance only, no new mechanics (constants in `core/battle.ts`):
+
+| Constant | Old | New |
+|---|---|---|
+| `FIRE_LINE_Y` | 330 | 90 (charging starts ~1.5 s after spawn at y 60) |
+| `CHARGE_MS` | 4000 | 6000 (still `/ speedScale` via `chargeMs`) |
+| `HULL_MAX` | 3 | 2 (boarded after two hits) |
+| `ARMED_CHANCE` | 0.25 / 0.35 / 0.45 | 0.4 / 0.5 / 0.6 (first enemy of a mission still unarmed) |
+
+- Presentation: hull pips are drawn from `hullMax` (now two; red from hull 1). The nose glow of a
+  charging ship has a larger floor (scale `0.6 + 1.0 * charge`, alpha `0.5 + 0.45 * charge`) so it
+  reads on the small, far ships high on the screen from the first moment; the aiming line still
+  shows in the last quarter (1.5 s at speed 1).
+- Tests isolate the parked armed enemy (others disarmed each slice), since newly spawned enemies
+  now cross the fire line within seconds.

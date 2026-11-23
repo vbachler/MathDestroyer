@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ARMED_CHANCE, BOARDING_KILL_POINTS, BattleSim, DOME_X, EXPLAIN_MS, FIRE_LINE_Y, HULL_MAX, IMPACT_Y, LANE_X,
-  MAX_ALIVE, MISSION_WAVES, SPAWN_Y, WAVE_START_DELAY_MS, armedChance, baseSpeed, chargeMs, enemiesInWave,
+  ARMED_CHANCE, BOARDING_KILL_POINTS, BattleSim, CHARGE_MS, DOME_X, EXPLAIN_MS, FIRE_LINE_Y, HULL_MAX, IMPACT_Y, LANE_X,
+  MAX_ALIVE, MAX_STEP_MS, MISSION_WAVES, SPAWN_Y, WAVE_START_DELAY_MS, armedChance, baseSpeed, chargeMs, enemiesInWave,
   maxAlive as maxAliveFor, spawnIntervalMs,
 } from '../src/core/battle';
 import { BOARDING_CRAWLERS, BoardingSim } from '../src/core/boarding';
@@ -776,28 +776,44 @@ describe('BattleSim armed enemies and hull (v6)', () => {
   }
   const hitsBy = (ev: BattleEvent[], id: number): BattleEvent[] =>
     ev.filter((x) => x.type === 'shipHit' && x.enemy.id === id);
+  /**
+   * update() in MAX_STEP_MS slices with every enemy but `e` disarmed, so only `e` can hit the
+   * hull (enemies spawned meanwhile pass the high fire line within a few seconds).
+   */
+  function updateSolo(sim: BattleSim, e: Enemy, ms: number): BattleEvent[] {
+    const ev: BattleEvent[] = [];
+    for (let left = ms; left > 0; left -= MAX_STEP_MS) {
+      for (const x of sim.state.enemies) if (x !== e) x.armed = false;
+      ev.push(...sim.update(Math.min(MAX_STEP_MS, left)));
+    }
+    return ev;
+  }
 
   it('constants and helpers', () => {
-    expect(FIRE_LINE_Y).toBe(330);
-    expect(HULL_MAX).toBe(3);
+    // v9 balance: charging starts just below the spawn line, longer charge, two hull points.
+    expect(FIRE_LINE_Y).toBe(90);
+    expect(FIRE_LINE_Y).toBeGreaterThan(SPAWN_Y);
+    expect(HULL_MAX).toBe(2);
+    expect(CHARGE_MS).toBe(6000);
     expect(BOARDING_KILL_POINTS).toBe(10);
     expect(BOARDING_CRAWLERS).toBe(8);
-    expect(ARMED_CHANCE).toEqual([0.25, 0.35, 0.45]);
-    expect([1, 2, 3, 4].map(armedChance)).toEqual([0.25, 0.35, 0.45, 0.45]);
-    expect(chargeMs(1)).toBe(4000);
-    expect(chargeMs(1.25)).toBe(3200);
-    expect(chargeMs()).toBe(4000);
+    expect(ARMED_CHANCE).toEqual([0.4, 0.5, 0.6]);
+    expect([1, 2, 3, 4].map(armedChance)).toEqual([...ARMED_CHANCE, ARMED_CHANCE[ARMED_CHANCE.length - 1]]);
+    expect(chargeMs(1)).toBe(CHARGE_MS);
+    expect(chargeMs(1.25)).toBe(CHARGE_MS / 1.25);
+    expect(chargeMs(0.5)).toBe(CHARGE_MS * 2);
+    expect(chargeMs()).toBe(CHARGE_MS);
   });
 
   it('starts with a full hull, no boardings, and spawns enemies with charge 0', () => {
     const sim = new BattleSim(cfg());
-    expect(sim.state).toMatchObject({ hull: 3, hullMax: 3, boardings: 0 });
+    expect(sim.state).toMatchObject({ hull: HULL_MAX, hullMax: HULL_MAX, boardings: 0 });
     const e = firstSpawn(sim);
     expect(e.charge).toBe(0);
     expect(e.armed).toBe(false);
   });
 
-  it('arms enemies with chance 0.25 / 0.35 / 0.45 per wave; the first enemy of a mission never', () => {
+  it('arms enemies with chance ARMED_CHANCE per wave; the first enemy of a mission never', () => {
     const armed = [0, 0, 0];
     const total = [0, 0, 0];
     for (let seed = 1; seed <= 150; seed++) {
@@ -827,16 +843,21 @@ describe('BattleSim armed enemies and hull (v6)', () => {
       const sim = new BattleSim(cfg({ speedScale: scale }));
       const e = parkedArmed(sim);
       const ms = chargeMs(scale);
-      let ev = sim.update(ms - 50);
+      let ev = updateSolo(sim, e, ms - 50);
       expect(hitsBy(ev, e.id)).toEqual([]);
       expect(e.charge).toBeCloseTo((ms - 50) / ms, 5);
-      ev = sim.update(50);
-      expect(hitsBy(ev, e.id)).toEqual([{ type: 'shipHit', enemy: e, hull: 2 }]);
+      ev = updateSolo(sim, e, 50);
+      expect(hitsBy(ev, e.id)).toEqual([{ type: 'shipHit', enemy: e, hull: HULL_MAX - 1 }]);
       expect(e.charge).toBe(0);
-      expect(sim.state.hull).toBe(2);
-      ev = sim.update(ms);
-      expect(hitsBy(ev, e.id)).toEqual([{ type: 'shipHit', enemy: e, hull: 1 }]);
-      expect(sim.state.phase).toBe('spawning');
+      expect(sim.state.hull).toBe(HULL_MAX - 1);
+      // Each further full charge is one more hit; the last one breaches.
+      for (let hull = HULL_MAX - 2; hull >= 0; hull--) {
+        ev = updateSolo(sim, e, ms);
+        expect(hitsBy(ev, e.id)).toEqual([{ type: 'shipHit', enemy: e, hull }]);
+        expect(sim.state.hull).toBe(hull);
+        expect(sim.state.phase).toBe(hull > 0 ? 'spawning' : 'boarding');
+      }
+      expect(ev.some((x) => x.type === 'breach')).toBe(true);
     });
   }
 
@@ -844,11 +865,11 @@ describe('BattleSim armed enemies and hull (v6)', () => {
     const sim = new BattleSim(cfg());
     const e = parkedArmed(sim);
     e.y = FIRE_LINE_Y - 1;
-    sim.update(5000);
+    updateSolo(sim, e, chargeMs() * 1.5);
     expect(e.charge).toBe(0);
     e.y = FIRE_LINE_Y;
     e.armed = false;
-    sim.update(5000);
+    updateSolo(sim, e, chargeMs() * 1.5);
     expect(e.charge).toBe(0);
     expect(sim.state.hull).toBe(HULL_MAX);
   });
@@ -856,9 +877,9 @@ describe('BattleSim armed enemies and hull (v6)', () => {
   it('an enemy killed mid-charge never fires', () => {
     const sim = new BattleSim(cfg());
     const e = parkedArmed(sim);
-    sim.update(chargeMs() * 0.9);
+    updateSolo(sim, e, chargeMs() * 0.9);
     expect(answer(sim, e.fact.answer)[0]).toMatchObject({ type: 'kill', enemy: { id: e.id } });
-    const ev = sim.update(chargeMs() * 2);
+    const ev = updateSolo(sim, e, chargeMs() * 2);
     expect(hitsBy(ev, e.id)).toEqual([]);
     expect(sim.state.hull).toBe(HULL_MAX);
   });
