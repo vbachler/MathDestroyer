@@ -1,0 +1,1014 @@
+{
+ "log": [
+  {
+   "step": 0,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 15,
+   "type": "spawn",
+   "enemy": 1,
+   "fact": "add:0+6"
+  },
+  {
+   "step": 21,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 23,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 46,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 66,
+   "type": "spawn",
+   "enemy": 2,
+   "fact": "add:3+4"
+  },
+  {
+   "step": 69,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 70,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 92,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 115,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 116,
+   "type": "spawn",
+   "enemy": 3,
+   "fact": "add:3+3"
+  },
+  {
+   "step": 119,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 138,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 161,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 166,
+   "type": "spawn",
+   "enemy": 4,
+   "fact": "add:3+4"
+  },
+  {
+   "step": 168,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 184,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 207,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 216,
+   "type": "spawn",
+   "enemy": 5,
+   "fact": "add:6+3"
+  },
+  {
+   "step": 217,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 230,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 253,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 267,
+   "type": "spawn",
+   "enemy": 6,
+   "fact": "add:7+3"
+  },
+  {
+   "step": 273,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 276,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 299,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 317,
+   "type": "spawn",
+   "enemy": 7,
+   "fact": "add:5+5"
+  },
+  {
+   "step": 322,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 345,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 367,
+   "type": "spawn",
+   "enemy": 8,
+   "fact": "add:3+4"
+  },
+  {
+   "step": 368,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 371,
+   "type": "submit",
+   "events": [
+    "kill",
+    "waveCleared"
+   ]
+  },
+  {
+   "step": 372,
+   "type": "picked",
+   "ids": [
+    "shield",
+    "overcharge",
+    "autoTurret"
+   ],
+   "n": 0
+  },
+  {
+   "step": 390,
+   "type": "spawn",
+   "enemy": 9,
+   "fact": "add:4+2"
+  },
+  {
+   "step": 391,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 392,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 414,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 436,
+   "type": "spawn",
+   "enemy": 10,
+   "fact": "add:4+5"
+  },
+  {
+   "step": 437,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 441,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 460,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 483,
+   "type": "spawn",
+   "enemy": 11,
+   "fact": "add:5+1"
+  },
+  {
+   "step": 483,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 506,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 529,
+   "type": "spawn",
+   "enemy": 12,
+   "fact": "add:3+3"
+  },
+  {
+   "step": 529,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 532,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 552,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 575,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 576,
+   "type": "spawn",
+   "enemy": 13,
+   "fact": "add:4+2"
+  },
+  {
+   "step": 581,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 598,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 621,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 622,
+   "type": "spawn",
+   "enemy": 14,
+   "fact": "add:4+5"
+  },
+  {
+   "step": 623,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 644,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 667,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 669,
+   "type": "spawn",
+   "enemy": 15,
+   "fact": "add:3+3"
+  },
+  {
+   "step": 672,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 690,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 713,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 715,
+   "type": "spawn",
+   "enemy": 16,
+   "fact": "add:4+5"
+  },
+  {
+   "step": 721,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 736,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 759,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 762,
+   "type": "spawn",
+   "enemy": 17,
+   "fact": "add:6+3"
+  },
+  {
+   "step": 763,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 782,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 805,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 808,
+   "type": "spawn",
+   "enemy": 18,
+   "fact": "add:0+6"
+  },
+  {
+   "step": 812,
+   "type": "submit",
+   "events": [
+    "kill",
+    "waveCleared"
+   ]
+  },
+  {
+   "step": 813,
+   "type": "picked",
+   "ids": [
+    "autoTurret",
+    "salvage",
+    "slowField"
+   ],
+   "n": 0
+  },
+  {
+   "step": 828,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 831,
+   "type": "spawn",
+   "enemy": 19,
+   "fact": "add:3+4"
+  },
+  {
+   "step": 833,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 851,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 873,
+   "type": "spawn",
+   "enemy": 20,
+   "fact": "add:1+8"
+  },
+  {
+   "step": 874,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 875,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 897,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 916,
+   "type": "spawn",
+   "enemy": 21,
+   "fact": "add:2+4"
+  },
+  {
+   "step": 917,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 920,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 943,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 960,
+   "type": "spawn",
+   "enemy": 22,
+   "fact": "add:5+4"
+  },
+  {
+   "step": 966,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 989,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1002,
+   "type": "spawn",
+   "enemy": 23,
+   "fact": "add:4+5"
+  },
+  {
+   "step": 1008,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 1012,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1035,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1045,
+   "type": "spawn",
+   "enemy": 24,
+   "fact": "add:2+4"
+  },
+  {
+   "step": 1050,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 1058,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1081,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1089,
+   "type": "spawn",
+   "enemy": 25,
+   "fact": "add:5+1"
+  },
+  {
+   "step": 1092,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 1104,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1127,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1131,
+   "type": "spawn",
+   "enemy": 26,
+   "fact": "add:5+4"
+  },
+  {
+   "step": 1134,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 1150,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1173,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1174,
+   "type": "spawn",
+   "enemy": 27,
+   "fact": "add:2+4"
+  },
+  {
+   "step": 1176,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 1196,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1218,
+   "type": "spawn",
+   "enemy": 28,
+   "fact": "add:0+6"
+  },
+  {
+   "step": 1218,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 1219,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1242,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1260,
+   "type": "spawn",
+   "enemy": 29,
+   "fact": "add:5+5"
+  },
+  {
+   "step": 1260,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 1265,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1288,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 1303,
+   "type": "spawn",
+   "enemy": 30,
+   "fact": "add:4+5"
+  },
+  {
+   "step": 1309,
+   "type": "submit",
+   "events": [
+    "kill",
+    "won"
+   ]
+  }
+ ],
+ "records": [
+  {
+   "factId": "add:0+6",
+   "outcome": "fast",
+   "responseMs": 392
+  },
+  {
+   "factId": "add:3+4",
+   "outcome": "wrong",
+   "responseMs": 256
+  },
+  {
+   "factId": "add:3+4",
+   "outcome": "slow",
+   "responseMs": 33
+  },
+  {
+   "factId": "add:3+3",
+   "outcome": "fast",
+   "responseMs": 186
+  },
+  {
+   "factId": "add:3+4",
+   "outcome": "fast",
+   "responseMs": 153
+  },
+  {
+   "factId": "add:6+3",
+   "outcome": "fast",
+   "responseMs": 53
+  },
+  {
+   "factId": "add:7+3",
+   "outcome": "fast",
+   "responseMs": 442
+  },
+  {
+   "factId": "add:5+5",
+   "outcome": "fast",
+   "responseMs": 339
+  },
+  {
+   "factId": "add:3+4",
+   "outcome": "wrong",
+   "responseMs": 33
+  },
+  {
+   "factId": "add:3+4",
+   "outcome": "slow",
+   "responseMs": 186
+  },
+  {
+   "factId": "add:4+2",
+   "outcome": "wrong",
+   "responseMs": 103
+  },
+  {
+   "factId": "add:4+2",
+   "outcome": "slow",
+   "responseMs": 33
+  },
+  {
+   "factId": "add:4+5",
+   "outcome": "wrong",
+   "responseMs": 33
+  },
+  {
+   "factId": "add:4+5",
+   "outcome": "slow",
+   "responseMs": 306
+  },
+  {
+   "factId": "add:5+1",
+   "outcome": "fast",
+   "responseMs": 70
+  },
+  {
+   "factId": "add:3+3",
+   "outcome": "wrong",
+   "responseMs": 0
+  },
+  {
+   "factId": "add:3+3",
+   "outcome": "slow",
+   "responseMs": 186
+  },
+  {
+   "factId": "add:4+2",
+   "outcome": "fast",
+   "responseMs": 322
+  },
+  {
+   "factId": "add:4+5",
+   "outcome": "fast",
+   "responseMs": 33
+  },
+  {
+   "factId": "add:3+3",
+   "outcome": "fast",
+   "responseMs": 256
+  },
+  {
+   "factId": "add:4+5",
+   "outcome": "fast",
+   "responseMs": 372
+  },
+  {
+   "factId": "add:6+3",
+   "outcome": "fast",
+   "responseMs": 103
+  },
+  {
+   "factId": "add:0+6",
+   "outcome": "fast",
+   "responseMs": 219
+  },
+  {
+   "factId": "add:3+4",
+   "outcome": "fast",
+   "responseMs": 136
+  },
+  {
+   "factId": "add:1+8",
+   "outcome": "wrong",
+   "responseMs": 53
+  },
+  {
+   "factId": "add:1+8",
+   "outcome": "slow",
+   "responseMs": 33
+  },
+  {
+   "factId": "add:2+4",
+   "outcome": "fast",
+   "responseMs": 33
+  },
+  {
+   "factId": "add:5+4",
+   "outcome": "fast",
+   "responseMs": 442
+  },
+  {
+   "factId": "add:4+5",
+   "outcome": "fast",
+   "responseMs": 392
+  },
+  {
+   "factId": "add:2+4",
+   "outcome": "fast",
+   "responseMs": 339
+  },
+  {
+   "factId": "add:5+1",
+   "outcome": "fast",
+   "responseMs": 256
+  },
+  {
+   "factId": "add:5+4",
+   "outcome": "fast",
+   "responseMs": 206
+  },
+  {
+   "factId": "add:2+4",
+   "outcome": "fast",
+   "responseMs": 153
+  },
+  {
+   "factId": "add:0+6",
+   "outcome": "fast",
+   "responseMs": 70
+  },
+  {
+   "factId": "add:5+5",
+   "outcome": "fast",
+   "responseMs": 20
+  },
+  {
+   "factId": "add:4+5",
+   "outcome": "fast",
+   "responseMs": 372
+  }
+ ],
+ "final": {
+  "phase": "won",
+  "timeMs": 81009,
+  "wave": 3,
+  "score": 155,
+  "streak": 1,
+  "bestStreak": 1,
+  "kills": 30,
+  "wrongAnswers": 54,
+  "ownedUpgrades": {
+   "repairDrone": 1,
+   "autoTurret": 2,
+   "shield": 1
+  },
+  "hull": 2,
+  "boardings": 0,
+  "domes": [
+   {
+    "hp": 3,
+    "maxHp": 3
+   },
+   {
+    "hp": 3,
+    "maxHp": 3
+   },
+   {
+    "hp": 3,
+    "maxHp": 3
+   },
+   {
+    "hp": 3,
+    "maxHp": 3
+   }
+  ],
+  "missed": [],
+  "accuracy": 0.35714285714285715
+ }
+}

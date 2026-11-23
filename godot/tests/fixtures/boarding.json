@@ -1,0 +1,238 @@
+{
+ "log": [
+  {
+   "step": 0,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 20,
+   "type": "spawn",
+   "id": 1,
+   "kind": "beetle",
+   "lane": 0,
+   "z": 0.9920454545454545
+  },
+  {
+   "step": 31,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 47,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 68,
+   "type": "spawn",
+   "id": 2,
+   "kind": "stalker",
+   "lane": 0,
+   "z": 0.9973863636363637
+  },
+  {
+   "step": 93,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 94,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 117,
+   "type": "spawn",
+   "id": 3,
+   "kind": "drifter",
+   "lane": 0,
+   "z": 0.9953977272727272
+  },
+  {
+   "step": 124,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 141,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 166,
+   "type": "spawn",
+   "id": 4,
+   "kind": "scorpion",
+   "lane": 0,
+   "z": 0.9920454545454545
+  },
+  {
+   "step": 186,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 188,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 214,
+   "type": "spawn",
+   "id": 5,
+   "kind": "stalker",
+   "lane": 0,
+   "z": 0.9973863636363637
+  },
+  {
+   "step": 217,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 235,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 263,
+   "type": "spawn",
+   "id": 6,
+   "kind": "beetle",
+   "lane": 1,
+   "z": 0.9948863636363636
+  },
+  {
+   "step": 279,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 282,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 312,
+   "type": "spawn",
+   "id": 7,
+   "kind": "crab",
+   "lane": 1,
+   "z": 0.9932386363636363
+  },
+  {
+   "step": 329,
+   "type": "submitWrong",
+   "events": [
+    "wrong"
+   ]
+  },
+  {
+   "step": 341,
+   "type": "submit",
+   "events": [
+    "kill"
+   ]
+  },
+  {
+   "step": 360,
+   "type": "spawn",
+   "id": 8,
+   "kind": "stalker",
+   "lane": -1,
+   "z": 0.9973863636363637
+  },
+  {
+   "step": 372,
+   "type": "submit",
+   "events": [
+    "kill",
+    "repelled"
+   ]
+  }
+ ],
+ "records": [
+  {
+   "factId": "mul:6x1",
+   "outcome": "fast",
+   "responseMs": 640
+  },
+  {
+   "factId": "mul:6x2",
+   "outcome": "fast",
+   "responseMs": 1425
+  },
+  {
+   "factId": "mul:6x3",
+   "outcome": "fast",
+   "responseMs": 415
+  },
+  {
+   "factId": "mul:6x4",
+   "outcome": "fast",
+   "responseMs": 1170
+  },
+  {
+   "factId": "mul:6x5",
+   "outcome": "fast",
+   "responseMs": 160
+  },
+  {
+   "factId": "mul:6x6",
+   "outcome": "fast",
+   "responseMs": 920
+  },
+  {
+   "factId": "mul:6x7",
+   "outcome": "wrong",
+   "responseMs": 985
+  },
+  {
+   "factId": "mul:6x7",
+   "outcome": "slow",
+   "responseMs": 690
+  },
+  {
+   "factId": "mul:6x8",
+   "outcome": "fast",
+   "responseMs": 690
+  }
+ ],
+ "final": {
+  "phase": "repelled",
+  "timeMs": 21460,
+  "crawlers": [],
+  "input": "",
+  "bites": 0,
+  "maxBites": 3,
+  "remaining": 0,
+  "kills": 8
+ }
+}

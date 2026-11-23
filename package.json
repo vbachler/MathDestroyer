@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "art": "node tools/process-art.mjs"
+    "art": "node tools/process-art.mjs",
+    "godot:sync": "node tools/godot-sync.mjs",
+    "audio:render": "node tools/render-audio.mjs"
   },
   "dependencies": {
     "@fontsource/rajdhani": "^5.3.0",
@@ -16,9 +18,11 @@
     "phaser": "3.90.0"
   },
   "devDependencies": {
+    "node-web-audio-api": "^2.2.0",
     "sharp": "^0.35.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.1"
+    "vitest": "^5.1.1",
+    "wasm-media-encoders": "^0.7.0"
   }
 }

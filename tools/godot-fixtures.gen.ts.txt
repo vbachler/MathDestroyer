@@ -1,0 +1,111 @@
+// Generator of the reference data used by godot/tests/test_rng.gd and test_port_fixtures.gd
+// (godot/tests/fixtures/*.json): runs the TS core and dumps rng outputs, the galaxy, sector pools,
+// scheduler waves and a scripted battle / boarding. Kept as .txt so vitest does not pick it up.
+// Regenerate after changing src/core:
+//   cp tools/godot-fixtures.gen.ts.txt tests/_godot_fixtures.gen.test.ts
+//   npx vitest run tests/_godot_fixtures.gen.test.ts
+//   rm tests/_godot_fixtures.gen.test.ts
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { it } from 'vitest';
+import { BattleSim } from '../src/core/battle';
+import { BoardingSim } from '../src/core/boarding';
+import { SECTORS } from '../src/core/content';
+import { createMissionScheduler } from '../src/core/scheduler';
+import { sectorFacts, generateFact, sectorCategories, sectorKind } from '../src/core/factgen';
+import { createRng } from '../src/core/rng';
+import { stableHash } from '../src/core/names';
+
+const OUT = 'godot/tests/fixtures';
+
+it('writes fixtures', () => {
+  mkdirSync(OUT, { recursive: true });
+
+  const rng: Record<string, unknown> = {};
+  for (const seed of [42, 2718, 0, 4294967295]) {
+    const r = createRng(seed);
+    rng[String(seed)] = Array.from({ length: 10 }, () => r.next());
+    const r2 = createRng(seed);
+    rng[`${seed}_int`] = Array.from({ length: 10 }, () => r2.int(-5, 20));
+    rng[`${seed}_shuffle`] = createRng(seed).shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  }
+  rng.hashes = Object.fromEntries(['', 'a', 'pos:add-5', 'planet:add-5.1#0', 'ščćžđ'].map((s) => [s, stableHash(s)]));
+  writeFileSync(`${OUT}/rng.json`, JSON.stringify(rng, null, 1));
+
+  writeFileSync(`${OUT}/galaxy.json`, JSON.stringify(SECTORS, null, 1));
+
+  const facts: Record<string, unknown> = {};
+  for (const s of SECTORS) {
+    const kind = sectorKind(s.id);
+    if (kind === 'enumerated') facts[s.id] = sectorFacts(s.id).map((f) => f.id);
+    else if (kind === 'generated') {
+      const r = createRng(99);
+      facts[s.id] = sectorCategories(s.id).flatMap((c) => Array.from({ length: 5 }, () => generateFact(s.id, c, r).id));
+    }
+  }
+  writeFileSync(`${OUT}/facts.json`, JSON.stringify(facts, null, 1));
+
+  const sched: Record<string, string[]> = {};
+  for (const planetId of ['add-5.1', 'add-50.2', 'neg-20.1', 'core.1', 'miss-div.3']) {
+    const s = createMissionScheduler({ planetId, stats: {}, planets: {}, now: 1_700_000_000_000, rng: createRng(5) });
+    sched[planetId] = [...s.wave(0, 8), ...s.wave(1, 10), ...s.wave(2, 12)].map((f) => f.id);
+  }
+  writeFileSync(`${OUT}/scheduler.json`, JSON.stringify(sched, null, 1));
+
+  const sim = new BattleSim({
+    planetId: 'add-10.1', totalWaves: 3, stats: {}, planets: {}, modules: { headStart: 2, hull: 1 }, now: 1_700_000_000_000,
+    seed: 7, speedScale: 1.08, density: 1,
+  });
+  const log: unknown[] = [];
+  for (let i = 0; i < 2500 && sim.state.phase !== 'won' && sim.state.phase !== 'lost'; i++) {
+    const ev = sim.update(i % 3 === 0 ? 120 : 33);
+    for (const e of ev) log.push({ step: i, type: e.type, ...('enemy' in e ? { enemy: e.enemy.id, fact: e.enemy.fact.id } : {}) });
+    if (sim.state.phase === 'waveCleared') {
+      const offers = sim.offers();
+      const ev2 = offers.length > 0 ? sim.pickUpgrade(offers[i % offers.length].def.id) : sim.nextWave();
+      log.push({ step: i, type: 'picked', ids: offers.map((o) => o.def.id), n: ev2.length });
+    }
+    if (sim.state.phase === 'boarding') {
+      const bf = sim.boardingFacts();
+      sim.resolveBoarding({ repelled: true, records: [], kills: 3 });
+      log.push({ step: i, type: 'boarded', facts: bf.map((f) => f.id) });
+    }
+    if (i % 7 === 0 && sim.state.enemies.length > 0) {
+      const target = [...sim.state.enemies].sort((a, b) => b.y - a.y)[0];
+      for (const ch of String(target.fact.answer)) {
+        if (ch === '-') sim.toggleSign(); else sim.typeDigit(Number(ch));
+      }
+      if (target.fact.answer < 0 && !sim.state.input.startsWith('-')) sim.toggleSign();
+      const ev3 = sim.submit();
+      log.push({ step: i, type: 'submit', events: ev3.map((e) => e.type) });
+    } else if (i % 23 === 0) {
+      sim.typeDigit(9); sim.typeDigit(9); sim.typeDigit(9);
+      log.push({ step: i, type: 'submitWrong', events: sim.submit().map((e) => e.type) });
+    }
+  }
+  const st = sim.state;
+  writeFileSync(`${OUT}/battle.json`, JSON.stringify({
+    log, records: sim.records, final: {
+      phase: st.phase, timeMs: st.timeMs, wave: st.wave, score: st.score, streak: st.streak, bestStreak: st.bestStreak,
+      kills: st.kills, wrongAnswers: st.wrongAnswers, ownedUpgrades: st.ownedUpgrades, hull: st.hull, boardings: st.boardings,
+      domes: st.domes, missed: st.missed.map((f) => f.id), accuracy: sim.accuracy(),
+    },
+  }, null, 1));
+
+  const bfacts = sectorFacts('mul-c').slice(0, 8);
+  const b = new BoardingSim({ facts: bfacts, seed: 11, speedScale: 1.25, density: 0.75 });
+  const blog: unknown[] = [];
+  for (let i = 0; i < 2000 && b.state.phase === 'fighting'; i++) {
+    for (const e of b.step(i % 2 === 0 ? 70 : 45)) {
+      blog.push({ step: i, type: e.type, ...('crawler' in e ? { id: e.crawler.id, kind: e.crawler.kind, lane: e.crawler.lane, z: e.crawler.z } : {}) });
+    }
+    if (i % 31 === 0 && b.state.crawlers.length > 0) {
+      const c = b.state.crawlers[0];
+      for (const ch of String(c.fact.answer)) b.typeDigit(Number(ch));
+      blog.push({ step: i, type: 'submit', events: b.submit().map((e) => e.type) });
+    } else if (i % 47 === 0) {
+      b.typeDigit(1);
+      blog.push({ step: i, type: 'submitWrong', events: b.submit().map((e) => e.type) });
+    }
+  }
+  writeFileSync(`${OUT}/boarding.json`, JSON.stringify({ log: blog, records: b.records, final: { ...b.state, crawlers: b.state.crawlers.map((c) => c.id) } }, null, 1));
+});

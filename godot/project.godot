@@ -1,0 +1,35 @@
+; Engine configuration file.
+; MathDestroyer Godot port (see PORT.md).
+
+config_version=5
+
+[application]
+
+config/name="MathDestroyer"
+config/description="Math drill space game (Godot port of the Phaser game)."
+run/main_scene="res://scenes/boot.tscn"
+config/features=PackedStringArray("4.7")
+boot_splash/bg_color=Color(0.0156863, 0.027451, 0.0431373, 1)
+boot_splash/show_image=false
+
+[autoload]
+
+App="*res://scripts/app.gd"
+Sfx="*res://scripts/audio/sfx.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[input_devices]
+
+pointing/emulate_mouse_from_touch=true
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=1
+anti_aliasing/quality/msaa_2d=2
+environment/defaults/default_clear_color=Color(0.0156863, 0.027451, 0.0431373, 1)

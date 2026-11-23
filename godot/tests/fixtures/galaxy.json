@@ -1,0 +1,4628 @@
+[
+ {
+  "id": "type-1",
+  "skill": "typing",
+  "nameKey": "meta.sector.type-1",
+  "hue": 175,
+  "order": 0,
+  "x": 2042,
+  "y": 1449,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "type-1.s1",
+    "sectorId": "type-1",
+    "name": "Driplex",
+    "x": 2090,
+    "y": 1447,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "type-1.1",
+      "systemId": "type-1.s1",
+      "sectorId": "type-1",
+      "name": "Uzel",
+      "orbit": 0,
+      "angle": 3.7246113618820327
+     },
+     {
+      "id": "type-1.2",
+      "systemId": "type-1.s1",
+      "sectorId": "type-1",
+      "name": "Ernus",
+      "orbit": 1,
+      "angle": 0.5865510849156189
+     },
+     {
+      "id": "type-1.3",
+      "systemId": "type-1.s1",
+      "sectorId": "type-1",
+      "name": "Thaikul",
+      "orbit": 2,
+      "angle": 3.915655930215139
+     },
+     {
+      "id": "type-1.4",
+      "systemId": "type-1.s1",
+      "sectorId": "type-1",
+      "name": "Stafas",
+      "orbit": 3,
+      "angle": 2.673466289607718
+     },
+     {
+      "id": "type-1.5",
+      "systemId": "type-1.s1",
+      "sectorId": "type-1",
+      "name": "Pome",
+      "orbit": 4,
+      "angle": 2.4260006692141824
+     }
+    ]
+   },
+   {
+    "id": "type-1.s2",
+    "sectorId": "type-1",
+    "name": "Sesy",
+    "x": 2158,
+    "y": 1416,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "type-1.6",
+      "systemId": "type-1.s2",
+      "sectorId": "type-1",
+      "name": "Hasi",
+      "orbit": 0,
+      "angle": 1.245403197642113
+     },
+     {
+      "id": "type-1.7",
+      "systemId": "type-1.s2",
+      "sectorId": "type-1",
+      "name": "Skuzux",
+      "orbit": 1,
+      "angle": 0.18104432074265378
+     },
+     {
+      "id": "type-1.8",
+      "systemId": "type-1.s2",
+      "sectorId": "type-1",
+      "name": "Dribima",
+      "orbit": 2,
+      "angle": 0.877474111735995
+     }
+    ]
+   },
+   {
+    "id": "type-1.s3",
+    "sectorId": "type-1",
+    "name": "Mudroth",
+    "x": 1986,
+    "y": 1344,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "type-1.9",
+      "systemId": "type-1.s3",
+      "sectorId": "type-1",
+      "name": "Lobyllus",
+      "orbit": 0,
+      "angle": 2.540861810944634
+     },
+     {
+      "id": "type-1.10",
+      "systemId": "type-1.s3",
+      "sectorId": "type-1",
+      "name": "Mamruha",
+      "orbit": 1,
+      "angle": 2.7435126285760383
+     },
+     {
+      "id": "type-1.11",
+      "systemId": "type-1.s3",
+      "sectorId": "type-1",
+      "name": "Zersun",
+      "orbit": 2,
+      "angle": 3.963226705328867
+     },
+     {
+      "id": "type-1.12",
+      "systemId": "type-1.s3",
+      "sectorId": "type-1",
+      "name": "Zailtox",
+      "orbit": 3,
+      "angle": 1.183189120187494
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "type-2",
+  "skill": "typing",
+  "nameKey": "meta.sector.type-2",
+  "hue": 180,
+  "order": 1,
+  "x": 2165,
+  "y": 990,
+  "radius": 260,
+  "systems": [
+   {
+    "id": "type-2.s1",
+    "sectorId": "type-2",
+    "name": "Palkiages",
+    "x": 2174,
+    "y": 945,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "type-2.1",
+      "systemId": "type-2.s1",
+      "sectorId": "type-2",
+      "name": "Satutia",
+      "orbit": 0,
+      "angle": 5.168407755968538
+     },
+     {
+      "id": "type-2.2",
+      "systemId": "type-2.s1",
+      "sectorId": "type-2",
+      "name": "Dilme",
+      "orbit": 1,
+      "angle": 0.37878131065340975
+     },
+     {
+      "id": "type-2.3",
+      "systemId": "type-2.s1",
+      "sectorId": "type-2",
+      "name": "Glepodrai",
+      "orbit": 2,
+      "angle": 2.2761571741454407
+     }
+    ]
+   },
+   {
+    "id": "type-2.s2",
+    "sectorId": "type-2",
+    "name": "Leizath",
+    "x": 2142,
+    "y": 1142,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "type-2.4",
+      "systemId": "type-2.s2",
+      "sectorId": "type-2",
+      "name": "Hiartone",
+      "orbit": 0,
+      "angle": 3.914833132422308
+     },
+     {
+      "id": "type-2.5",
+      "systemId": "type-2.s2",
+      "sectorId": "type-2",
+      "name": "Imom",
+      "orbit": 1,
+      "angle": 2.52036235390568
+     },
+     {
+      "id": "type-2.6",
+      "systemId": "type-2.s2",
+      "sectorId": "type-2",
+      "name": "Vupas",
+      "orbit": 2,
+      "angle": 2.838598075895155
+     }
+    ]
+   },
+   {
+    "id": "type-2.s3",
+    "sectorId": "type-2",
+    "name": "Omnive",
+    "x": 2134,
+    "y": 1051,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "type-2.7",
+      "systemId": "type-2.s3",
+      "sectorId": "type-2",
+      "name": "Skotrymro",
+      "orbit": 0,
+      "angle": 5.7832760823994995
+     },
+     {
+      "id": "type-2.8",
+      "systemId": "type-2.s3",
+      "sectorId": "type-2",
+      "name": "Ogloze",
+      "orbit": 1,
+      "angle": 2.4799281262063686
+     },
+     {
+      "id": "type-2.9",
+      "systemId": "type-2.s3",
+      "sectorId": "type-2",
+      "name": "Uldair",
+      "orbit": 2,
+      "angle": 0.47428706750296223
+     },
+     {
+      "id": "type-2.10",
+      "systemId": "type-2.s3",
+      "sectorId": "type-2",
+      "name": "Mussei",
+      "orbit": 3,
+      "angle": 0.2692551195564942
+     },
+     {
+      "id": "type-2.11",
+      "systemId": "type-2.s3",
+      "sectorId": "type-2",
+      "name": "Edrenrei",
+      "orbit": 4,
+      "angle": 3.171186547139961
+     }
+    ]
+   },
+   {
+    "id": "type-2.s4",
+    "sectorId": "type-2",
+    "name": "Nebriplas",
+    "x": 2108,
+    "y": 975,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "type-2.12",
+      "systemId": "type-2.s4",
+      "sectorId": "type-2",
+      "name": "Traipla",
+      "orbit": 0,
+      "angle": 5.228674025294844
+     },
+     {
+      "id": "type-2.13",
+      "systemId": "type-2.s4",
+      "sectorId": "type-2",
+      "name": "Boski",
+      "orbit": 1,
+      "angle": 0.7229426898305695
+     },
+     {
+      "id": "type-2.14",
+      "systemId": "type-2.s4",
+      "sectorId": "type-2",
+      "name": "Deiko",
+      "orbit": 2,
+      "angle": 5.253394881669168
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "type-3",
+  "skill": "typing",
+  "nameKey": "meta.sector.type-3",
+  "hue": 185,
+  "order": 2,
+  "x": 2729,
+  "y": 1027,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "type-3.s1",
+    "sectorId": "type-3",
+    "name": "Kriaro",
+    "x": 2821,
+    "y": 961,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "type-3.1",
+      "systemId": "type-3.s1",
+      "sectorId": "type-3",
+      "name": "Hostax",
+      "orbit": 0,
+      "angle": 1.2782792005681674
+     },
+     {
+      "id": "type-3.2",
+      "systemId": "type-3.s1",
+      "sectorId": "type-3",
+      "name": "Birlor",
+      "orbit": 1,
+      "angle": 2.3823963272954605
+     },
+     {
+      "id": "type-3.3",
+      "systemId": "type-3.s1",
+      "sectorId": "type-3",
+      "name": "Plulol",
+      "orbit": 2,
+      "angle": 5.235906469915193
+     }
+    ]
+   },
+   {
+    "id": "type-3.s2",
+    "sectorId": "type-3",
+    "name": "Peimmis",
+    "x": 2793,
+    "y": 842,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "type-3.4",
+      "systemId": "type-3.s2",
+      "sectorId": "type-3",
+      "name": "Ryla",
+      "orbit": 0,
+      "angle": 1.167930543760825
+     },
+     {
+      "id": "type-3.5",
+      "systemId": "type-3.s2",
+      "sectorId": "type-3",
+      "name": "Kriarkan",
+      "orbit": 1,
+      "angle": 3.353914149700916
+     },
+     {
+      "id": "type-3.6",
+      "systemId": "type-3.s2",
+      "sectorId": "type-3",
+      "name": "Neltaskir",
+      "orbit": 2,
+      "angle": 2.518181535111538
+     }
+    ]
+   },
+   {
+    "id": "type-3.s3",
+    "sectorId": "type-3",
+    "name": "Pleizam",
+    "x": 2891,
+    "y": 949,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "type-3.7",
+      "systemId": "type-3.s3",
+      "sectorId": "type-3",
+      "name": "Thurmu",
+      "orbit": 0,
+      "angle": 1.018730972565526
+     },
+     {
+      "id": "type-3.8",
+      "systemId": "type-3.s3",
+      "sectorId": "type-3",
+      "name": "Gyglo",
+      "orbit": 1,
+      "angle": 2.7939868454983436
+     },
+     {
+      "id": "type-3.9",
+      "systemId": "type-3.s3",
+      "sectorId": "type-3",
+      "name": "Risegith",
+      "orbit": 2,
+      "angle": 0.5809614109861205
+     },
+     {
+      "id": "type-3.10",
+      "systemId": "type-3.s3",
+      "sectorId": "type-3",
+      "name": "Ponex",
+      "orbit": 3,
+      "angle": 0.4139321219343631
+     }
+    ]
+   },
+   {
+    "id": "type-3.s4",
+    "sectorId": "type-3",
+    "name": "Vekuth",
+    "x": 2726,
+    "y": 1108,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "type-3.11",
+      "systemId": "type-3.s4",
+      "sectorId": "type-3",
+      "name": "Plilrun",
+      "orbit": 0,
+      "angle": 3.1519556287921633
+     },
+     {
+      "id": "type-3.12",
+      "systemId": "type-3.s4",
+      "sectorId": "type-3",
+      "name": "Nasky",
+      "orbit": 1,
+      "angle": 1.9962736606965366
+     },
+     {
+      "id": "type-3.13",
+      "systemId": "type-3.s4",
+      "sectorId": "type-3",
+      "name": "Zadom",
+      "orbit": 2,
+      "angle": 4.36111129326474
+     },
+     {
+      "id": "type-3.14",
+      "systemId": "type-3.s4",
+      "sectorId": "type-3",
+      "name": "Krervus",
+      "orbit": 3,
+      "angle": 1.9148300371112787
+     }
+    ]
+   },
+   {
+    "id": "type-3.s5",
+    "sectorId": "type-3",
+    "name": "Glonumli",
+    "x": 2827,
+    "y": 1035,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "type-3.15",
+      "systemId": "type-3.s5",
+      "sectorId": "type-3",
+      "name": "Plyla",
+      "orbit": 0,
+      "angle": 1.9621014684647091
+     },
+     {
+      "id": "type-3.16",
+      "systemId": "type-3.s5",
+      "sectorId": "type-3",
+      "name": "Rinarlul",
+      "orbit": 1,
+      "angle": 5.103107428999238
+     },
+     {
+      "id": "type-3.17",
+      "systemId": "type-3.s5",
+      "sectorId": "type-3",
+      "name": "Alnoru",
+      "orbit": 2,
+      "angle": 6.044708870730215
+     },
+     {
+      "id": "type-3.18",
+      "systemId": "type-3.s5",
+      "sectorId": "type-3",
+      "name": "Dandai",
+      "orbit": 3,
+      "angle": 1.7569029307219646
+     },
+     {
+      "id": "type-3.19",
+      "systemId": "type-3.s5",
+      "sectorId": "type-3",
+      "name": "Hekraglu",
+      "orbit": 4,
+      "angle": 0.14600634433315432
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "add-5",
+  "skill": "addition",
+  "nameKey": "meta.sector.add-5",
+  "hue": 125,
+  "order": 3,
+  "x": 3228,
+  "y": 1264,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "add-5.s1",
+    "sectorId": "add-5",
+    "name": "Rismia",
+    "x": 3225,
+    "y": 1366,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "add-5.1",
+      "systemId": "add-5.s1",
+      "sectorId": "add-5",
+      "name": "Pali",
+      "orbit": 0,
+      "angle": 0.9999608807272882
+     },
+     {
+      "id": "add-5.2",
+      "systemId": "add-5.s1",
+      "sectorId": "add-5",
+      "name": "Punis",
+      "orbit": 1,
+      "angle": 5.044677800656402
+     },
+     {
+      "id": "add-5.3",
+      "systemId": "add-5.s1",
+      "sectorId": "add-5",
+      "name": "Mukrotri",
+      "orbit": 2,
+      "angle": 0.6818034614280062
+     }
+    ]
+   },
+   {
+    "id": "add-5.s2",
+    "sectorId": "add-5",
+    "name": "Brutra",
+    "x": 3254,
+    "y": 1267,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "add-5.4",
+      "systemId": "add-5.s2",
+      "sectorId": "add-5",
+      "name": "Unis",
+      "orbit": 0,
+      "angle": 4.130187278192605
+     },
+     {
+      "id": "add-5.5",
+      "systemId": "add-5.s2",
+      "sectorId": "add-5",
+      "name": "Orulvax",
+      "orbit": 1,
+      "angle": 2.016772531105341
+     },
+     {
+      "id": "add-5.6",
+      "systemId": "add-5.s2",
+      "sectorId": "add-5",
+      "name": "Skeihil",
+      "orbit": 2,
+      "angle": 0.7135390611945487
+     },
+     {
+      "id": "add-5.7",
+      "systemId": "add-5.s2",
+      "sectorId": "add-5",
+      "name": "Daplursin",
+      "orbit": 3,
+      "angle": 5.757226200060196
+     },
+     {
+      "id": "add-5.8",
+      "systemId": "add-5.s2",
+      "sectorId": "add-5",
+      "name": "Hosaith",
+      "orbit": 4,
+      "angle": 0.8011545401252121
+     }
+    ]
+   },
+   {
+    "id": "add-5.s3",
+    "sectorId": "add-5",
+    "name": "Maimdone",
+    "x": 3094,
+    "y": 1235,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "add-5.9",
+      "systemId": "add-5.s3",
+      "sectorId": "add-5",
+      "name": "Lofoplem",
+      "orbit": 0,
+      "angle": 2.916007078210814
+     },
+     {
+      "id": "add-5.10",
+      "systemId": "add-5.s3",
+      "sectorId": "add-5",
+      "name": "Runvus",
+      "orbit": 1,
+      "angle": 0.27273274793367497
+     },
+     {
+      "id": "add-5.11",
+      "systemId": "add-5.s3",
+      "sectorId": "add-5",
+      "name": "Trizahin",
+      "orbit": 2,
+      "angle": 1.7262048514751733
+     },
+     {
+      "id": "add-5.12",
+      "systemId": "add-5.s3",
+      "sectorId": "add-5",
+      "name": "Vrehemke",
+      "orbit": 3,
+      "angle": 5.281555337865202
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "add-10",
+  "skill": "addition",
+  "nameKey": "meta.sector.add-10",
+  "hue": 130,
+  "order": 4,
+  "x": 2924,
+  "y": 1568,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "add-10.s1",
+    "sectorId": "add-10",
+    "name": "Glatrul",
+    "x": 2878,
+    "y": 1505,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "add-10.1",
+      "systemId": "add-10.s1",
+      "sectorId": "add-10",
+      "name": "Liger",
+      "orbit": 0,
+      "angle": 5.962876710732284
+     },
+     {
+      "id": "add-10.2",
+      "systemId": "add-10.s1",
+      "sectorId": "add-10",
+      "name": "Billasi",
+      "orbit": 1,
+      "angle": 5.8016864265899475
+     },
+     {
+      "id": "add-10.3",
+      "systemId": "add-10.s1",
+      "sectorId": "add-10",
+      "name": "Lenitha",
+      "orbit": 2,
+      "angle": 4.547851789835981
+     },
+     {
+      "id": "add-10.4",
+      "systemId": "add-10.s1",
+      "sectorId": "add-10",
+      "name": "Gaisti",
+      "orbit": 3,
+      "angle": 5.147120109389754
+     }
+    ]
+   },
+   {
+    "id": "add-10.s2",
+    "sectorId": "add-10",
+    "name": "Zorlidre",
+    "x": 3010,
+    "y": 1682,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "add-10.5",
+      "systemId": "add-10.s2",
+      "sectorId": "add-10",
+      "name": "Zofelma",
+      "orbit": 0,
+      "angle": 1.4513620870565564
+     },
+     {
+      "id": "add-10.6",
+      "systemId": "add-10.s2",
+      "sectorId": "add-10",
+      "name": "Dustur",
+      "orbit": 1,
+      "angle": 1.661253573833751
+     },
+     {
+      "id": "add-10.7",
+      "systemId": "add-10.s2",
+      "sectorId": "add-10",
+      "name": "Pusti",
+      "orbit": 2,
+      "angle": 5.056007322907908
+     },
+     {
+      "id": "add-10.8",
+      "systemId": "add-10.s2",
+      "sectorId": "add-10",
+      "name": "Steistem",
+      "orbit": 3,
+      "angle": 2.3319891997962707
+     }
+    ]
+   },
+   {
+    "id": "add-10.s3",
+    "sectorId": "add-10",
+    "name": "Rudapux",
+    "x": 2966,
+    "y": 1558,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "add-10.9",
+      "systemId": "add-10.s3",
+      "sectorId": "add-10",
+      "name": "Riabro",
+      "orbit": 0,
+      "angle": 0.13409879681600445
+     },
+     {
+      "id": "add-10.10",
+      "systemId": "add-10.s3",
+      "sectorId": "add-10",
+      "name": "Driadrum",
+      "orbit": 1,
+      "angle": 2.3936606414365014
+     },
+     {
+      "id": "add-10.11",
+      "systemId": "add-10.s3",
+      "sectorId": "add-10",
+      "name": "Krursodri",
+      "orbit": 2,
+      "angle": 2.8977541425427775
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "add-15",
+  "skill": "addition",
+  "nameKey": "meta.sector.add-15",
+  "hue": 135,
+  "order": 5,
+  "x": 2498,
+  "y": 1778,
+  "radius": 260,
+  "systems": [
+   {
+    "id": "add-15.s1",
+    "sectorId": "add-15",
+    "name": "Gipim",
+    "x": 2666,
+    "y": 1771,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "add-15.1",
+      "systemId": "add-15.s1",
+      "sectorId": "add-15",
+      "name": "Plakri",
+      "orbit": 0,
+      "angle": 5.697940058051555
+     },
+     {
+      "id": "add-15.2",
+      "systemId": "add-15.s1",
+      "sectorId": "add-15",
+      "name": "Dunmi",
+      "orbit": 1,
+      "angle": 0.1860445966813601
+     },
+     {
+      "id": "add-15.3",
+      "systemId": "add-15.s1",
+      "sectorId": "add-15",
+      "name": "Treiku",
+      "orbit": 2,
+      "angle": 1.5829899011290687
+     }
+    ]
+   },
+   {
+    "id": "add-15.s2",
+    "sectorId": "add-15",
+    "name": "Afiako",
+    "x": 2577,
+    "y": 1823,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "add-15.4",
+      "systemId": "add-15.s2",
+      "sectorId": "add-15",
+      "name": "Krustudri",
+      "orbit": 0,
+      "angle": 3.5406717843574556
+     },
+     {
+      "id": "add-15.5",
+      "systemId": "add-15.s2",
+      "sectorId": "add-15",
+      "name": "Avril",
+      "orbit": 1,
+      "angle": 6.23301680063706
+     },
+     {
+      "id": "add-15.6",
+      "systemId": "add-15.s2",
+      "sectorId": "add-15",
+      "name": "Vaiplon",
+      "orbit": 2,
+      "angle": 0.4055553784036573
+     }
+    ]
+   },
+   {
+    "id": "add-15.s3",
+    "sectorId": "add-15",
+    "name": "Bipu",
+    "x": 2396,
+    "y": 1665,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "add-15.7",
+      "systemId": "add-15.s3",
+      "sectorId": "add-15",
+      "name": "Urraix",
+      "orbit": 0,
+      "angle": 3.690955976182986
+     },
+     {
+      "id": "add-15.8",
+      "systemId": "add-15.s3",
+      "sectorId": "add-15",
+      "name": "Hupen",
+      "orbit": 1,
+      "angle": 6.1480794463353226
+     },
+     {
+      "id": "add-15.9",
+      "systemId": "add-15.s3",
+      "sectorId": "add-15",
+      "name": "Bamtin",
+      "orbit": 2,
+      "angle": 4.897226978326369
+     },
+     {
+      "id": "add-15.10",
+      "systemId": "add-15.s3",
+      "sectorId": "add-15",
+      "name": "Tuvan",
+      "orbit": 3,
+      "angle": 3.5868395127772286
+     }
+    ]
+   },
+   {
+    "id": "add-15.s4",
+    "sectorId": "add-15",
+    "name": "Beglail",
+    "x": 2343,
+    "y": 1841,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "add-15.11",
+      "systemId": "add-15.s4",
+      "sectorId": "add-15",
+      "name": "Fatapa",
+      "orbit": 0,
+      "angle": 3.1474856972301435
+     },
+     {
+      "id": "add-15.12",
+      "systemId": "add-15.s4",
+      "sectorId": "add-15",
+      "name": "Epil",
+      "orbit": 1,
+      "angle": 5.517563164424205
+     },
+     {
+      "id": "add-15.13",
+      "systemId": "add-15.s4",
+      "sectorId": "add-15",
+      "name": "Neplozin",
+      "orbit": 2,
+      "angle": 0.17515358412411447
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "add-50",
+  "skill": "addition",
+  "nameKey": "meta.sector.add-50",
+  "hue": 140,
+  "order": 6,
+  "x": 1991,
+  "y": 2028,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "add-50.s1",
+    "sectorId": "add-50",
+    "name": "Kuglubria",
+    "x": 1994,
+    "y": 1939,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "add-50.1",
+      "systemId": "add-50.s1",
+      "sectorId": "add-50",
+      "name": "Honelkam",
+      "orbit": 0,
+      "angle": 5.3651578935272175
+     },
+     {
+      "id": "add-50.2",
+      "systemId": "add-50.s1",
+      "sectorId": "add-50",
+      "name": "Pamkagy",
+      "orbit": 1,
+      "angle": 6.205764385007417
+     },
+     {
+      "id": "add-50.3",
+      "systemId": "add-50.s1",
+      "sectorId": "add-50",
+      "name": "Kuzoplath",
+      "orbit": 2,
+      "angle": 3.248207785463693
+     }
+    ]
+   },
+   {
+    "id": "add-50.s2",
+    "sectorId": "add-50",
+    "name": "Vosnax",
+    "x": 2149,
+    "y": 1928,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "add-50.4",
+      "systemId": "add-50.s2",
+      "sectorId": "add-50",
+      "name": "Krekeskur",
+      "orbit": 0,
+      "angle": 0.1536247769628816
+     },
+     {
+      "id": "add-50.5",
+      "systemId": "add-50.s2",
+      "sectorId": "add-50",
+      "name": "Dranasku",
+      "orbit": 1,
+      "angle": 3.4263896070860542
+     },
+     {
+      "id": "add-50.6",
+      "systemId": "add-50.s2",
+      "sectorId": "add-50",
+      "name": "Skesko",
+      "orbit": 2,
+      "angle": 3.7445540191337554
+     }
+    ]
+   },
+   {
+    "id": "add-50.s3",
+    "sectorId": "add-50",
+    "name": "Ukeibres",
+    "x": 1835,
+    "y": 1937,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "add-50.7",
+      "systemId": "add-50.s3",
+      "sectorId": "add-50",
+      "name": "Remevris",
+      "orbit": 0,
+      "angle": 6.1242337792390025
+     },
+     {
+      "id": "add-50.8",
+      "systemId": "add-50.s3",
+      "sectorId": "add-50",
+      "name": "Zenuth",
+      "orbit": 1,
+      "angle": 2.8225502975893453
+     },
+     {
+      "id": "add-50.9",
+      "systemId": "add-50.s3",
+      "sectorId": "add-50",
+      "name": "Rarus",
+      "orbit": 2,
+      "angle": 5.9634599776334065
+     },
+     {
+      "id": "add-50.10",
+      "systemId": "add-50.s3",
+      "sectorId": "add-50",
+      "name": "Binvolom",
+      "orbit": 3,
+      "angle": 2.7502616138812233
+     },
+     {
+      "id": "add-50.11",
+      "systemId": "add-50.s3",
+      "sectorId": "add-50",
+      "name": "Doskemmei",
+      "orbit": 4,
+      "angle": 2.7927131032075785
+     }
+    ]
+   },
+   {
+    "id": "add-50.s4",
+    "sectorId": "add-50",
+    "name": "Tothim",
+    "x": 2107,
+    "y": 2081,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "add-50.12",
+      "systemId": "add-50.s4",
+      "sectorId": "add-50",
+      "name": "Viantith",
+      "orbit": 0,
+      "angle": 5.370454691257247
+     },
+     {
+      "id": "add-50.13",
+      "systemId": "add-50.s4",
+      "sectorId": "add-50",
+      "name": "Iplopa",
+      "orbit": 1,
+      "angle": 0.5077936685816752
+     },
+     {
+      "id": "add-50.14",
+      "systemId": "add-50.s4",
+      "sectorId": "add-50",
+      "name": "Riakru",
+      "orbit": 2,
+      "angle": 0.5877199242767557
+     },
+     {
+      "id": "add-50.15",
+      "systemId": "add-50.s4",
+      "sectorId": "add-50",
+      "name": "Usson",
+      "orbit": 3,
+      "angle": 5.382665394899209
+     },
+     {
+      "id": "add-50.16",
+      "systemId": "add-50.s4",
+      "sectorId": "add-50",
+      "name": "Diaskir",
+      "orbit": 4,
+      "angle": 3.3043506300042345
+     }
+    ]
+   },
+   {
+    "id": "add-50.s5",
+    "sectorId": "add-50",
+    "name": "Fasumlith",
+    "x": 2019,
+    "y": 1841,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "add-50.17",
+      "systemId": "add-50.s5",
+      "sectorId": "add-50",
+      "name": "Pliadrax",
+      "orbit": 0,
+      "angle": 0.3244765992727782
+     },
+     {
+      "id": "add-50.18",
+      "systemId": "add-50.s5",
+      "sectorId": "add-50",
+      "name": "Stikry",
+      "orbit": 1,
+      "angle": 0.04668689317649759
+     },
+     {
+      "id": "add-50.19",
+      "systemId": "add-50.s5",
+      "sectorId": "add-50",
+      "name": "Breplen",
+      "orbit": 2,
+      "angle": 4.589512908411651
+     },
+     {
+      "id": "add-50.20",
+      "systemId": "add-50.s5",
+      "sectorId": "add-50",
+      "name": "Uglia",
+      "orbit": 3,
+      "angle": 0.2669702390106196
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "add-100",
+  "skill": "addition",
+  "nameKey": "meta.sector.add-100",
+  "hue": 145,
+  "order": 7,
+  "x": 1507,
+  "y": 1657,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "add-100.s1",
+    "sectorId": "add-100",
+    "name": "Tralraim",
+    "x": 1577,
+    "y": 1486,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "add-100.1",
+      "systemId": "add-100.s1",
+      "sectorId": "add-100",
+      "name": "Viadro",
+      "orbit": 0,
+      "angle": 3.641828792284299
+     },
+     {
+      "id": "add-100.2",
+      "systemId": "add-100.s1",
+      "sectorId": "add-100",
+      "name": "Puzinum",
+      "orbit": 1,
+      "angle": 0.7342073609236216
+     },
+     {
+      "id": "add-100.3",
+      "systemId": "add-100.s1",
+      "sectorId": "add-100",
+      "name": "Stimkezux",
+      "orbit": 2,
+      "angle": 6.19692217020225
+     },
+     {
+      "id": "add-100.4",
+      "systemId": "add-100.s1",
+      "sectorId": "add-100",
+      "name": "Herkath",
+      "orbit": 3,
+      "angle": 1.845000874183498
+     },
+     {
+      "id": "add-100.5",
+      "systemId": "add-100.s1",
+      "sectorId": "add-100",
+      "name": "Dibu",
+      "orbit": 4,
+      "angle": 5.725389420490537
+     }
+    ]
+   },
+   {
+    "id": "add-100.s2",
+    "sectorId": "add-100",
+    "name": "Kruldu",
+    "x": 1427,
+    "y": 1847,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "add-100.6",
+      "systemId": "add-100.s2",
+      "sectorId": "add-100",
+      "name": "Noskustol",
+      "orbit": 0,
+      "angle": 4.836502480633012
+     },
+     {
+      "id": "add-100.7",
+      "systemId": "add-100.s2",
+      "sectorId": "add-100",
+      "name": "Glotho",
+      "orbit": 1,
+      "angle": 1.637257957634306
+     },
+     {
+      "id": "add-100.8",
+      "systemId": "add-100.s2",
+      "sectorId": "add-100",
+      "name": "Plute",
+      "orbit": 2,
+      "angle": 5.543716788136183
+     },
+     {
+      "id": "add-100.9",
+      "systemId": "add-100.s2",
+      "sectorId": "add-100",
+      "name": "Homynti",
+      "orbit": 3,
+      "angle": 2.6490435496054237
+     }
+    ]
+   },
+   {
+    "id": "add-100.s3",
+    "sectorId": "add-100",
+    "name": "Sostesux",
+    "x": 1390,
+    "y": 1625,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "add-100.10",
+      "systemId": "add-100.s3",
+      "sectorId": "add-100",
+      "name": "Glimos",
+      "orbit": 0,
+      "angle": 5.495154368150751
+     },
+     {
+      "id": "add-100.11",
+      "systemId": "add-100.s3",
+      "sectorId": "add-100",
+      "name": "Daglu",
+      "orbit": 1,
+      "angle": 1.6700804075182327
+     },
+     {
+      "id": "add-100.12",
+      "systemId": "add-100.s3",
+      "sectorId": "add-100",
+      "name": "Bokralia",
+      "orbit": 2,
+      "angle": 1.796563818962869
+     }
+    ]
+   },
+   {
+    "id": "add-100.s4",
+    "sectorId": "add-100",
+    "name": "Loduplun",
+    "x": 1424,
+    "y": 1692,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "add-100.13",
+      "systemId": "add-100.s4",
+      "sectorId": "add-100",
+      "name": "Dazu",
+      "orbit": 0,
+      "angle": 1.8303609862934043
+     },
+     {
+      "id": "add-100.14",
+      "systemId": "add-100.s4",
+      "sectorId": "add-100",
+      "name": "Susis",
+      "orbit": 1,
+      "angle": 6.048996309113519
+     },
+     {
+      "id": "add-100.15",
+      "systemId": "add-100.s4",
+      "sectorId": "add-100",
+      "name": "Terkosma",
+      "orbit": 2,
+      "angle": 4.203917098592712
+     },
+     {
+      "id": "add-100.16",
+      "systemId": "add-100.s4",
+      "sectorId": "add-100",
+      "name": "Tetinsal",
+      "orbit": 3,
+      "angle": 2.58120273372885
+     }
+    ]
+   },
+   {
+    "id": "add-100.s5",
+    "sectorId": "add-100",
+    "name": "Heithorru",
+    "x": 1635,
+    "y": 1543,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "add-100.17",
+      "systemId": "add-100.s5",
+      "sectorId": "add-100",
+      "name": "Dramam",
+      "orbit": 0,
+      "angle": 2.735661761670205
+     },
+     {
+      "id": "add-100.18",
+      "systemId": "add-100.s5",
+      "sectorId": "add-100",
+      "name": "Tasi",
+      "orbit": 1,
+      "angle": 2.4849870827150706
+     },
+     {
+      "id": "add-100.19",
+      "systemId": "add-100.s5",
+      "sectorId": "add-100",
+      "name": "Truthilix",
+      "orbit": 2,
+      "angle": 0.2313449916932153
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sub-5",
+  "skill": "subtraction",
+  "nameKey": "meta.sector.sub-5",
+  "hue": 80,
+  "order": 8,
+  "x": 1247,
+  "y": 1170,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "sub-5.s1",
+    "sectorId": "sub-5",
+    "name": "Piglufur",
+    "x": 1238,
+    "y": 1198,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "sub-5.1",
+      "systemId": "sub-5.s1",
+      "sectorId": "sub-5",
+      "name": "Uzuglia",
+      "orbit": 0,
+      "angle": 1.0773896821762319
+     },
+     {
+      "id": "sub-5.2",
+      "systemId": "sub-5.s1",
+      "sectorId": "sub-5",
+      "name": "Firaize",
+      "orbit": 1,
+      "angle": 2.19343966197761
+     },
+     {
+      "id": "sub-5.3",
+      "systemId": "sub-5.s1",
+      "sectorId": "sub-5",
+      "name": "Podon",
+      "orbit": 2,
+      "angle": 5.518581332000686
+     },
+     {
+      "id": "sub-5.4",
+      "systemId": "sub-5.s1",
+      "sectorId": "sub-5",
+      "name": "Tiazu",
+      "orbit": 3,
+      "angle": 3.407744520134772
+     },
+     {
+      "id": "sub-5.5",
+      "systemId": "sub-5.s1",
+      "sectorId": "sub-5",
+      "name": "Innunse",
+      "orbit": 4,
+      "angle": 2.452352325220714
+     }
+    ]
+   },
+   {
+    "id": "sub-5.s2",
+    "sectorId": "sub-5",
+    "name": "Thopli",
+    "x": 1210,
+    "y": 1042,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "sub-5.6",
+      "systemId": "sub-5.s2",
+      "sectorId": "sub-5",
+      "name": "Zulkonsix",
+      "orbit": 0,
+      "angle": 4.684015360932408
+     },
+     {
+      "id": "sub-5.7",
+      "systemId": "sub-5.s2",
+      "sectorId": "sub-5",
+      "name": "Tralkeim",
+      "orbit": 1,
+      "angle": 0.3117631418891047
+     },
+     {
+      "id": "sub-5.8",
+      "systemId": "sub-5.s2",
+      "sectorId": "sub-5",
+      "name": "Thofor",
+      "orbit": 2,
+      "angle": 2.398804978233063
+     },
+     {
+      "id": "sub-5.9",
+      "systemId": "sub-5.s2",
+      "sectorId": "sub-5",
+      "name": "Kritopeth",
+      "orbit": 3,
+      "angle": 4.996545531251325
+     },
+     {
+      "id": "sub-5.10",
+      "systemId": "sub-5.s2",
+      "sectorId": "sub-5",
+      "name": "Tridri",
+      "orbit": 4,
+      "angle": 2.883590226753118
+     }
+    ]
+   },
+   {
+    "id": "sub-5.s3",
+    "sectorId": "sub-5",
+    "name": "Feibrith",
+    "x": 1363,
+    "y": 1078,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "sub-5.11",
+      "systemId": "sub-5.s3",
+      "sectorId": "sub-5",
+      "name": "Tidruth",
+      "orbit": 0,
+      "angle": 1.0844797044069736
+     },
+     {
+      "id": "sub-5.12",
+      "systemId": "sub-5.s3",
+      "sectorId": "sub-5",
+      "name": "Skesmu",
+      "orbit": 1,
+      "angle": 5.209490931201976
+     },
+     {
+      "id": "sub-5.13",
+      "systemId": "sub-5.s3",
+      "sectorId": "sub-5",
+      "name": "Mupu",
+      "orbit": 2,
+      "angle": 4.866577484051908
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sub-10",
+  "skill": "subtraction",
+  "nameKey": "meta.sector.sub-10",
+  "hue": 85,
+  "order": 9,
+  "x": 1673,
+  "y": 1114,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "sub-10.s1",
+    "sectorId": "sub-10",
+    "name": "Vrelvosto",
+    "x": 1547,
+    "y": 1102,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "sub-10.1",
+      "systemId": "sub-10.s1",
+      "sectorId": "sub-10",
+      "name": "Genlo",
+      "orbit": 0,
+      "angle": 2.586588928919785
+     },
+     {
+      "id": "sub-10.2",
+      "systemId": "sub-10.s1",
+      "sectorId": "sub-10",
+      "name": "Isiage",
+      "orbit": 1,
+      "angle": 5.525900194117813
+     },
+     {
+      "id": "sub-10.3",
+      "systemId": "sub-10.s1",
+      "sectorId": "sub-10",
+      "name": "Lirdur",
+      "orbit": 2,
+      "angle": 3.2393208024394644
+     }
+    ]
+   },
+   {
+    "id": "sub-10.s2",
+    "sectorId": "sub-10",
+    "name": "Romnein",
+    "x": 1630,
+    "y": 1076,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "sub-10.4",
+      "systemId": "sub-10.s2",
+      "sectorId": "sub-10",
+      "name": "Gifiteis",
+      "orbit": 0,
+      "angle": 5.57052554898868
+     },
+     {
+      "id": "sub-10.5",
+      "systemId": "sub-10.s2",
+      "sectorId": "sub-10",
+      "name": "Vrefothem",
+      "orbit": 1,
+      "angle": 5.785043103111577
+     },
+     {
+      "id": "sub-10.6",
+      "systemId": "sub-10.s2",
+      "sectorId": "sub-10",
+      "name": "Imreigi",
+      "orbit": 2,
+      "angle": 3.96246425729556
+     }
+    ]
+   },
+   {
+    "id": "sub-10.s3",
+    "sectorId": "sub-10",
+    "name": "Kika",
+    "x": 1672,
+    "y": 1161,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "sub-10.7",
+      "systemId": "sub-10.s3",
+      "sectorId": "sub-10",
+      "name": "Vumlath",
+      "orbit": 0,
+      "angle": 2.832489667306847
+     },
+     {
+      "id": "sub-10.8",
+      "systemId": "sub-10.s3",
+      "sectorId": "sub-10",
+      "name": "Lipyfox",
+      "orbit": 1,
+      "angle": 1.119569042407318
+     },
+     {
+      "id": "sub-10.9",
+      "systemId": "sub-10.s3",
+      "sectorId": "sub-10",
+      "name": "Thaihaste",
+      "orbit": 2,
+      "angle": 0.359652168979305
+     },
+     {
+      "id": "sub-10.10",
+      "systemId": "sub-10.s3",
+      "sectorId": "sub-10",
+      "name": "Rohe",
+      "orbit": 3,
+      "angle": 3.3516190594497663
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sub-15",
+  "skill": "subtraction",
+  "nameKey": "meta.sector.sub-15",
+  "hue": 90,
+  "order": 10,
+  "x": 1735,
+  "y": 643,
+  "radius": 260,
+  "systems": [
+   {
+    "id": "sub-15.s1",
+    "sectorId": "sub-15",
+    "name": "Thaivruvo",
+    "x": 1863,
+    "y": 591,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "sub-15.1",
+      "systemId": "sub-15.s1",
+      "sectorId": "sub-15",
+      "name": "Fezaste",
+      "orbit": 0,
+      "angle": 5.207767923843232
+     },
+     {
+      "id": "sub-15.2",
+      "systemId": "sub-15.s1",
+      "sectorId": "sub-15",
+      "name": "Unys",
+      "orbit": 1,
+      "angle": 5.946852473704206
+     },
+     {
+      "id": "sub-15.3",
+      "systemId": "sub-15.s1",
+      "sectorId": "sub-15",
+      "name": "Glastor",
+      "orbit": 2,
+      "angle": 5.728705302793202
+     }
+    ]
+   },
+   {
+    "id": "sub-15.s2",
+    "sectorId": "sub-15",
+    "name": "Krekrul",
+    "x": 1850,
+    "y": 766,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "sub-15.4",
+      "systemId": "sub-15.s2",
+      "sectorId": "sub-15",
+      "name": "Zustupin",
+      "orbit": 0,
+      "angle": 5.9327703321093415
+     },
+     {
+      "id": "sub-15.5",
+      "systemId": "sub-15.s2",
+      "sectorId": "sub-15",
+      "name": "Kriglyth",
+      "orbit": 1,
+      "angle": 3.6604211483534144
+     },
+     {
+      "id": "sub-15.6",
+      "systemId": "sub-15.s2",
+      "sectorId": "sub-15",
+      "name": "Hunmumke",
+      "orbit": 2,
+      "angle": 0.12622238589758883
+     }
+    ]
+   },
+   {
+    "id": "sub-15.s3",
+    "sectorId": "sub-15",
+    "name": "Thogobi",
+    "x": 1786,
+    "y": 694,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "sub-15.7",
+      "systemId": "sub-15.s3",
+      "sectorId": "sub-15",
+      "name": "Kolirir",
+      "orbit": 0,
+      "angle": 2.9011464959621995
+     },
+     {
+      "id": "sub-15.8",
+      "systemId": "sub-15.s3",
+      "sectorId": "sub-15",
+      "name": "Stipem",
+      "orbit": 1,
+      "angle": 5.221626945561401
+     },
+     {
+      "id": "sub-15.9",
+      "systemId": "sub-15.s3",
+      "sectorId": "sub-15",
+      "name": "Umyrkin",
+      "orbit": 2,
+      "angle": 3.349941613211683
+     },
+     {
+      "id": "sub-15.10",
+      "systemId": "sub-15.s3",
+      "sectorId": "sub-15",
+      "name": "Krevar",
+      "orbit": 3,
+      "angle": 2.7509192730925123
+     },
+     {
+      "id": "sub-15.11",
+      "systemId": "sub-15.s3",
+      "sectorId": "sub-15",
+      "name": "Kreke",
+      "orbit": 4,
+      "angle": 2.580589324863623
+     }
+    ]
+   },
+   {
+    "id": "sub-15.s4",
+    "sectorId": "sub-15",
+    "name": "Zastiath",
+    "x": 1655,
+    "y": 677,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "sub-15.12",
+      "systemId": "sub-15.s4",
+      "sectorId": "sub-15",
+      "name": "Vivumor",
+      "orbit": 0,
+      "angle": 2.7911082279466535
+     },
+     {
+      "id": "sub-15.13",
+      "systemId": "sub-15.s4",
+      "sectorId": "sub-15",
+      "name": "Brethenu",
+      "orbit": 1,
+      "angle": 3.29144414935751
+     },
+     {
+      "id": "sub-15.14",
+      "systemId": "sub-15.s4",
+      "sectorId": "sub-15",
+      "name": "Dairil",
+      "orbit": 2,
+      "angle": 0.055665036477917804
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sub-50",
+  "skill": "subtraction",
+  "nameKey": "meta.sector.sub-50",
+  "hue": 95,
+  "order": 11,
+  "x": 2242,
+  "y": 393,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "sub-50.s1",
+    "sectorId": "sub-50",
+    "name": "Gladrusmi",
+    "x": 2352,
+    "y": 464,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "sub-50.1",
+      "systemId": "sub-50.s1",
+      "sectorId": "sub-50",
+      "name": "Sugun",
+      "orbit": 0,
+      "angle": 3.1373477905113503
+     },
+     {
+      "id": "sub-50.2",
+      "systemId": "sub-50.s1",
+      "sectorId": "sub-50",
+      "name": "Ratraral",
+      "orbit": 1,
+      "angle": 3.2063340039497583
+     },
+     {
+      "id": "sub-50.3",
+      "systemId": "sub-50.s1",
+      "sectorId": "sub-50",
+      "name": "Rehu",
+      "orbit": 2,
+      "angle": 2.4716892553900434
+     },
+     {
+      "id": "sub-50.4",
+      "systemId": "sub-50.s1",
+      "sectorId": "sub-50",
+      "name": "Kunasuth",
+      "orbit": 3,
+      "angle": 4.004337629192433
+     }
+    ]
+   },
+   {
+    "id": "sub-50.s2",
+    "sectorId": "sub-50",
+    "name": "Emtusin",
+    "x": 2096,
+    "y": 308,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "sub-50.5",
+      "systemId": "sub-50.s2",
+      "sectorId": "sub-50",
+      "name": "Lobubri",
+      "orbit": 0,
+      "angle": 0.9434700957507738
+     },
+     {
+      "id": "sub-50.6",
+      "systemId": "sub-50.s2",
+      "sectorId": "sub-50",
+      "name": "Skerlebar",
+      "orbit": 1,
+      "angle": 6.177925615719506
+     },
+     {
+      "id": "sub-50.7",
+      "systemId": "sub-50.s2",
+      "sectorId": "sub-50",
+      "name": "Toglax",
+      "orbit": 2,
+      "angle": 3.60593223510575
+     },
+     {
+      "id": "sub-50.8",
+      "systemId": "sub-50.s2",
+      "sectorId": "sub-50",
+      "name": "Ogeim",
+      "orbit": 3,
+      "angle": 3.423230747095428
+     }
+    ]
+   },
+   {
+    "id": "sub-50.s3",
+    "sectorId": "sub-50",
+    "name": "Stiamser",
+    "x": 2170,
+    "y": 356,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "sub-50.9",
+      "systemId": "sub-50.s3",
+      "sectorId": "sub-50",
+      "name": "Enna",
+      "orbit": 0,
+      "angle": 5.627768067586488
+     },
+     {
+      "id": "sub-50.10",
+      "systemId": "sub-50.s3",
+      "sectorId": "sub-50",
+      "name": "Molox",
+      "orbit": 1,
+      "angle": 4.046636833135491
+     },
+     {
+      "id": "sub-50.11",
+      "systemId": "sub-50.s3",
+      "sectorId": "sub-50",
+      "name": "Vonrox",
+      "orbit": 2,
+      "angle": 5.85624831458016
+     },
+     {
+      "id": "sub-50.12",
+      "systemId": "sub-50.s3",
+      "sectorId": "sub-50",
+      "name": "Bustes",
+      "orbit": 3,
+      "angle": 5.398640515915694
+     },
+     {
+      "id": "sub-50.13",
+      "systemId": "sub-50.s3",
+      "sectorId": "sub-50",
+      "name": "Dragan",
+      "orbit": 4,
+      "angle": 3.933535322917897
+     }
+    ]
+   },
+   {
+    "id": "sub-50.s4",
+    "sectorId": "sub-50",
+    "name": "Sivrisko",
+    "x": 2164,
+    "y": 457,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "sub-50.14",
+      "systemId": "sub-50.s4",
+      "sectorId": "sub-50",
+      "name": "Stibox",
+      "orbit": 0,
+      "angle": 5.5407526410789885
+     },
+     {
+      "id": "sub-50.15",
+      "systemId": "sub-50.s4",
+      "sectorId": "sub-50",
+      "name": "Reizitin",
+      "orbit": 1,
+      "angle": 0.8936016146883702
+     },
+     {
+      "id": "sub-50.16",
+      "systemId": "sub-50.s4",
+      "sectorId": "sub-50",
+      "name": "Pidres",
+      "orbit": 2,
+      "angle": 0.3151645068838952
+     },
+     {
+      "id": "sub-50.17",
+      "systemId": "sub-50.s4",
+      "sectorId": "sub-50",
+      "name": "Dylvaller",
+      "orbit": 3,
+      "angle": 1.0651933721852516
+     },
+     {
+      "id": "sub-50.18",
+      "systemId": "sub-50.s4",
+      "sectorId": "sub-50",
+      "name": "Thevai",
+      "orbit": 4,
+      "angle": 0.5131489742573666
+     }
+    ]
+   },
+   {
+    "id": "sub-50.s5",
+    "sectorId": "sub-50",
+    "name": "Vaiben",
+    "x": 2129,
+    "y": 215,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "sub-50.19",
+      "systemId": "sub-50.s5",
+      "sectorId": "sub-50",
+      "name": "Vrade",
+      "orbit": 0,
+      "angle": 0.9103329604846521
+     },
+     {
+      "id": "sub-50.20",
+      "systemId": "sub-50.s5",
+      "sectorId": "sub-50",
+      "name": "Kinobry",
+      "orbit": 1,
+      "angle": 4.267202765003312
+     },
+     {
+      "id": "sub-50.21",
+      "systemId": "sub-50.s5",
+      "sectorId": "sub-50",
+      "name": "Stibekry",
+      "orbit": 2,
+      "angle": 0.8848255530387475
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "sub-100",
+  "skill": "subtraction",
+  "nameKey": "meta.sector.sub-100",
+  "hue": 100,
+  "order": 12,
+  "x": 2852,
+  "y": 393,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "sub-100.s1",
+    "sectorId": "sub-100",
+    "name": "Hevairi",
+    "x": 2971,
+    "y": 492,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "sub-100.1",
+      "systemId": "sub-100.s1",
+      "sectorId": "sub-100",
+      "name": "Kule",
+      "orbit": 0,
+      "angle": 1.4900082836143367
+     },
+     {
+      "id": "sub-100.2",
+      "systemId": "sub-100.s1",
+      "sectorId": "sub-100",
+      "name": "Bemum",
+      "orbit": 1,
+      "angle": 4.688640013636327
+     },
+     {
+      "id": "sub-100.3",
+      "systemId": "sub-100.s1",
+      "sectorId": "sub-100",
+      "name": "Lansa",
+      "orbit": 2,
+      "angle": 2.477227687687979
+     }
+    ]
+   },
+   {
+    "id": "sub-100.s2",
+    "sectorId": "sub-100",
+    "name": "Raskolen",
+    "x": 3040,
+    "y": 450,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "sub-100.4",
+      "systemId": "sub-100.s2",
+      "sectorId": "sub-100",
+      "name": "Komre",
+      "orbit": 0,
+      "angle": 0.41126856065491596
+     },
+     {
+      "id": "sub-100.5",
+      "systemId": "sub-100.s2",
+      "sectorId": "sub-100",
+      "name": "Rabi",
+      "orbit": 1,
+      "angle": 1.8480919908266278
+     },
+     {
+      "id": "sub-100.6",
+      "systemId": "sub-100.s2",
+      "sectorId": "sub-100",
+      "name": "Vumeith",
+      "orbit": 2,
+      "angle": 3.639916225852516
+     }
+    ]
+   },
+   {
+    "id": "sub-100.s3",
+    "sectorId": "sub-100",
+    "name": "Pethevus",
+    "x": 2742,
+    "y": 412,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "sub-100.7",
+      "systemId": "sub-100.s3",
+      "sectorId": "sub-100",
+      "name": "Thonanvi",
+      "orbit": 0,
+      "angle": 5.388779675640687
+     },
+     {
+      "id": "sub-100.8",
+      "systemId": "sub-100.s3",
+      "sectorId": "sub-100",
+      "name": "Fadrezu",
+      "orbit": 1,
+      "angle": 4.8748240293364775
+     },
+     {
+      "id": "sub-100.9",
+      "systemId": "sub-100.s3",
+      "sectorId": "sub-100",
+      "name": "Teglethi",
+      "orbit": 2,
+      "angle": 3.362492871016236
+     },
+     {
+      "id": "sub-100.10",
+      "systemId": "sub-100.s3",
+      "sectorId": "sub-100",
+      "name": "Isas",
+      "orbit": 3,
+      "angle": 3.5780757923045226
+     }
+    ]
+   },
+   {
+    "id": "sub-100.s4",
+    "sectorId": "sub-100",
+    "name": "Myzuste",
+    "x": 2662,
+    "y": 486,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "sub-100.11",
+      "systemId": "sub-100.s4",
+      "sectorId": "sub-100",
+      "name": "Boke",
+      "orbit": 0,
+      "angle": 2.0541460386733736
+     },
+     {
+      "id": "sub-100.12",
+      "systemId": "sub-100.s4",
+      "sectorId": "sub-100",
+      "name": "Kapa",
+      "orbit": 1,
+      "angle": 2.967318353451386
+     },
+     {
+      "id": "sub-100.13",
+      "systemId": "sub-100.s4",
+      "sectorId": "sub-100",
+      "name": "Lude",
+      "orbit": 2,
+      "angle": 5.643426737478656
+     },
+     {
+      "id": "sub-100.14",
+      "systemId": "sub-100.s4",
+      "sectorId": "sub-100",
+      "name": "Plilsi",
+      "orbit": 3,
+      "angle": 3.9416597072282564
+     }
+    ]
+   },
+   {
+    "id": "sub-100.s5",
+    "sectorId": "sub-100",
+    "name": "Sofoha",
+    "x": 2903,
+    "y": 379,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "sub-100.15",
+      "systemId": "sub-100.s5",
+      "sectorId": "sub-100",
+      "name": "Mumsatru",
+      "orbit": 0,
+      "angle": 3.5339113546441365
+     },
+     {
+      "id": "sub-100.16",
+      "systemId": "sub-100.s5",
+      "sectorId": "sub-100",
+      "name": "Lakyfex",
+      "orbit": 1,
+      "angle": 2.400076597829695
+     },
+     {
+      "id": "sub-100.17",
+      "systemId": "sub-100.s5",
+      "sectorId": "sub-100",
+      "name": "Vafo",
+      "orbit": 2,
+      "angle": 4.801609973871479
+     },
+     {
+      "id": "sub-100.18",
+      "systemId": "sub-100.s5",
+      "sectorId": "sub-100",
+      "name": "Sakith",
+      "orbit": 3,
+      "angle": 4.18836206181728
+     },
+     {
+      "id": "sub-100.19",
+      "systemId": "sub-100.s5",
+      "sectorId": "sub-100",
+      "name": "Naskys",
+      "orbit": 4,
+      "angle": 3.37623567705927
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "mul-a",
+  "skill": "multiplication",
+  "nameKey": "meta.sector.mul-a",
+  "hue": 262.5,
+  "order": 13,
+  "x": 3377,
+  "y": 563,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "mul-a.s1",
+    "sectorId": "mul-a",
+    "name": "Kisnistai",
+    "x": 3413,
+    "y": 569,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "mul-a.1",
+      "systemId": "mul-a.s1",
+      "sectorId": "mul-a",
+      "name": "Thifogi",
+      "orbit": 0,
+      "angle": 3.1664572197216336
+     },
+     {
+      "id": "mul-a.2",
+      "systemId": "mul-a.s1",
+      "sectorId": "mul-a",
+      "name": "Stulsar",
+      "orbit": 1,
+      "angle": 0.5876293740364033
+     },
+     {
+      "id": "mul-a.3",
+      "systemId": "mul-a.s1",
+      "sectorId": "mul-a",
+      "name": "Fytemni",
+      "orbit": 2,
+      "angle": 3.0835265179650295
+     },
+     {
+      "id": "mul-a.4",
+      "systemId": "mul-a.s1",
+      "sectorId": "mul-a",
+      "name": "Vomdelo",
+      "orbit": 3,
+      "angle": 6.052436008413658
+     },
+     {
+      "id": "mul-a.5",
+      "systemId": "mul-a.s1",
+      "sectorId": "mul-a",
+      "name": "Vresku",
+      "orbit": 4,
+      "angle": 0.3913170439713054
+     }
+    ]
+   },
+   {
+    "id": "mul-a.s2",
+    "sectorId": "mul-a",
+    "name": "Bribyth",
+    "x": 3364,
+    "y": 679,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "mul-a.6",
+      "systemId": "mul-a.s2",
+      "sectorId": "mul-a",
+      "name": "Ilurvil",
+      "orbit": 0,
+      "angle": 4.12699171358737
+     },
+     {
+      "id": "mul-a.7",
+      "systemId": "mul-a.s2",
+      "sectorId": "mul-a",
+      "name": "Ugirmiax",
+      "orbit": 1,
+      "angle": 5.05155685693385
+     },
+     {
+      "id": "mul-a.8",
+      "systemId": "mul-a.s2",
+      "sectorId": "mul-a",
+      "name": "Skelu",
+      "orbit": 2,
+      "angle": 0.27302772195766994
+     },
+     {
+      "id": "mul-a.9",
+      "systemId": "mul-a.s2",
+      "sectorId": "mul-a",
+      "name": "Lonro",
+      "orbit": 3,
+      "angle": 0.7079505517478414
+     },
+     {
+      "id": "mul-a.10",
+      "systemId": "mul-a.s2",
+      "sectorId": "mul-a",
+      "name": "Thadin",
+      "orbit": 4,
+      "angle": 2.994913110929512
+     }
+    ]
+   },
+   {
+    "id": "mul-a.s3",
+    "sectorId": "mul-a",
+    "name": "Sketin",
+    "x": 3277,
+    "y": 648,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "mul-a.11",
+      "systemId": "mul-a.s3",
+      "sectorId": "mul-a",
+      "name": "Thalis",
+      "orbit": 0,
+      "angle": 5.740017313915299
+     },
+     {
+      "id": "mul-a.12",
+      "systemId": "mul-a.s3",
+      "sectorId": "mul-a",
+      "name": "Drozy",
+      "orbit": 1,
+      "angle": 6.261365961561975
+     },
+     {
+      "id": "mul-a.13",
+      "systemId": "mul-a.s3",
+      "sectorId": "mul-a",
+      "name": "Thymma",
+      "orbit": 2,
+      "angle": 3.4693944656567455
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "mul-b",
+  "skill": "multiplication",
+  "nameKey": "meta.sector.mul-b",
+  "hue": 267.5,
+  "order": 14,
+  "x": 3567,
+  "y": 949,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "mul-b.s1",
+    "sectorId": "mul-b",
+    "name": "Rybrasvon",
+    "x": 3695,
+    "y": 903,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "mul-b.1",
+      "systemId": "mul-b.s1",
+      "sectorId": "mul-b",
+      "name": "Binmei",
+      "orbit": 0,
+      "angle": 6.033329280107446
+     },
+     {
+      "id": "mul-b.2",
+      "systemId": "mul-b.s1",
+      "sectorId": "mul-b",
+      "name": "Gonmox",
+      "orbit": 1,
+      "angle": 0.9739919826070161
+     },
+     {
+      "id": "mul-b.3",
+      "systemId": "mul-b.s1",
+      "sectorId": "mul-b",
+      "name": "Thubry",
+      "orbit": 2,
+      "angle": 3.950142841476277
+     },
+     {
+      "id": "mul-b.4",
+      "systemId": "mul-b.s1",
+      "sectorId": "mul-b",
+      "name": "Krugeglax",
+      "orbit": 3,
+      "angle": 0.4796127856605004
+     }
+    ]
+   },
+   {
+    "id": "mul-b.s2",
+    "sectorId": "mul-b",
+    "name": "Liabrasar",
+    "x": 3508,
+    "y": 991,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "mul-b.5",
+      "systemId": "mul-b.s2",
+      "sectorId": "mul-b",
+      "name": "Rinal",
+      "orbit": 0,
+      "angle": 4.057279197895557
+     },
+     {
+      "id": "mul-b.6",
+      "systemId": "mul-b.s2",
+      "sectorId": "mul-b",
+      "name": "Tenezei",
+      "orbit": 1,
+      "angle": 1.5678547116019592
+     },
+     {
+      "id": "mul-b.7",
+      "systemId": "mul-b.s2",
+      "sectorId": "mul-b",
+      "name": "Sinse",
+      "orbit": 2,
+      "angle": 2.7489054112870845
+     }
+    ]
+   },
+   {
+    "id": "mul-b.s3",
+    "sectorId": "mul-b",
+    "name": "Oplai",
+    "x": 3477,
+    "y": 1065,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "mul-b.8",
+      "systemId": "mul-b.s3",
+      "sectorId": "mul-b",
+      "name": "Thugebrur",
+      "orbit": 0,
+      "angle": 1.0142742877267137
+     },
+     {
+      "id": "mul-b.9",
+      "systemId": "mul-b.s3",
+      "sectorId": "mul-b",
+      "name": "Gope",
+      "orbit": 1,
+      "angle": 2.9073876892358084
+     },
+     {
+      "id": "mul-b.10",
+      "systemId": "mul-b.s3",
+      "sectorId": "mul-b",
+      "name": "Plartu",
+      "orbit": 2,
+      "angle": 2.622524635249053
+     },
+     {
+      "id": "mul-b.11",
+      "systemId": "mul-b.s3",
+      "sectorId": "mul-b",
+      "name": "Aplor",
+      "orbit": 3,
+      "angle": 0.6042194838696404
+     },
+     {
+      "id": "mul-b.12",
+      "systemId": "mul-b.s3",
+      "sectorId": "mul-b",
+      "name": "Pyvila",
+      "orbit": 4,
+      "angle": 1.3867344478559747
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "mul-c",
+  "skill": "multiplication",
+  "nameKey": "meta.sector.mul-c",
+  "hue": 272.5,
+  "order": 15,
+  "x": 3678,
+  "y": 1364,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "mul-c.s1",
+    "sectorId": "mul-c",
+    "name": "Heikir",
+    "x": 3572,
+    "y": 1305,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "mul-c.1",
+      "systemId": "mul-c.s1",
+      "sectorId": "mul-c",
+      "name": "Plazofax",
+      "orbit": 0,
+      "angle": 1.7560125095409196
+     },
+     {
+      "id": "mul-c.2",
+      "systemId": "mul-c.s1",
+      "sectorId": "mul-c",
+      "name": "Vythu",
+      "orbit": 1,
+      "angle": 2.2611448287752838
+     },
+     {
+      "id": "mul-c.3",
+      "systemId": "mul-c.s1",
+      "sectorId": "mul-c",
+      "name": "Bohux",
+      "orbit": 2,
+      "angle": 1.4365127385558734
+     },
+     {
+      "id": "mul-c.4",
+      "systemId": "mul-c.s1",
+      "sectorId": "mul-c",
+      "name": "Dromais",
+      "orbit": 3,
+      "angle": 3.0171897559611938
+     },
+     {
+      "id": "mul-c.5",
+      "systemId": "mul-c.s1",
+      "sectorId": "mul-c",
+      "name": "Hedripla",
+      "orbit": 4,
+      "angle": 0.09384535360709272
+     }
+    ]
+   },
+   {
+    "id": "mul-c.s2",
+    "sectorId": "mul-c",
+    "name": "Taskon",
+    "x": 3654,
+    "y": 1254,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "mul-c.6",
+      "systemId": "mul-c.s2",
+      "sectorId": "mul-c",
+      "name": "Fothiteix",
+      "orbit": 0,
+      "angle": 1.1056228322345427
+     },
+     {
+      "id": "mul-c.7",
+      "systemId": "mul-c.s2",
+      "sectorId": "mul-c",
+      "name": "Tragir",
+      "orbit": 1,
+      "angle": 4.931510595176622
+     },
+     {
+      "id": "mul-c.8",
+      "systemId": "mul-c.s2",
+      "sectorId": "mul-c",
+      "name": "Driza",
+      "orbit": 2,
+      "angle": 5.39668320320862
+     }
+    ]
+   },
+   {
+    "id": "mul-c.s3",
+    "sectorId": "mul-c",
+    "name": "Daisko",
+    "x": 3626,
+    "y": 1367,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "mul-c.9",
+      "systemId": "mul-c.s3",
+      "sectorId": "mul-c",
+      "name": "Edun",
+      "orbit": 0,
+      "angle": 0.18854556193088712
+     },
+     {
+      "id": "mul-c.10",
+      "systemId": "mul-c.s3",
+      "sectorId": "mul-c",
+      "name": "Tredrei",
+      "orbit": 1,
+      "angle": 0.19942624336065698
+     },
+     {
+      "id": "mul-c.11",
+      "systemId": "mul-c.s3",
+      "sectorId": "mul-c",
+      "name": "Kivra",
+      "orbit": 2,
+      "angle": 6.08762676174693
+     },
+     {
+      "id": "mul-c.12",
+      "systemId": "mul-c.s3",
+      "sectorId": "mul-c",
+      "name": "Vrosu",
+      "orbit": 3,
+      "angle": 4.291697685383638
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "mul-d",
+  "skill": "multiplication",
+  "nameKey": "meta.sector.mul-d",
+  "hue": 277.5,
+  "order": 16,
+  "x": 3416,
+  "y": 1705,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "mul-d.s1",
+    "sectorId": "mul-d",
+    "name": "Plaburvi",
+    "x": 3354,
+    "y": 1767,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "mul-d.1",
+      "systemId": "mul-d.s1",
+      "sectorId": "mul-d",
+      "name": "Fadria",
+      "orbit": 0,
+      "angle": 3.582258226816851
+     },
+     {
+      "id": "mul-d.2",
+      "systemId": "mul-d.s1",
+      "sectorId": "mul-d",
+      "name": "Bryrsato",
+      "orbit": 1,
+      "angle": 3.2031983575432137
+     },
+     {
+      "id": "mul-d.3",
+      "systemId": "mul-d.s1",
+      "sectorId": "mul-d",
+      "name": "Tekrith",
+      "orbit": 2,
+      "angle": 2.0424365658754025
+     }
+    ]
+   },
+   {
+    "id": "mul-d.s2",
+    "sectorId": "mul-d",
+    "name": "Lupial",
+    "x": 3319,
+    "y": 1598,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "mul-d.4",
+      "systemId": "mul-d.s2",
+      "sectorId": "mul-d",
+      "name": "Driastox",
+      "orbit": 0,
+      "angle": 0.5740296589365386
+     },
+     {
+      "id": "mul-d.5",
+      "systemId": "mul-d.s2",
+      "sectorId": "mul-d",
+      "name": "Pemorvoth",
+      "orbit": 1,
+      "angle": 5.331924220297045
+     },
+     {
+      "id": "mul-d.6",
+      "systemId": "mul-d.s2",
+      "sectorId": "mul-d",
+      "name": "Drunvi",
+      "orbit": 2,
+      "angle": 3.1532726354222045
+     }
+    ]
+   },
+   {
+    "id": "mul-d.s3",
+    "sectorId": "mul-d",
+    "name": "Lifepia",
+    "x": 3495,
+    "y": 1619,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "mul-d.7",
+      "systemId": "mul-d.s3",
+      "sectorId": "mul-d",
+      "name": "Lokre",
+      "orbit": 0,
+      "angle": 1.4421490605541654
+     },
+     {
+      "id": "mul-d.8",
+      "systemId": "mul-d.s3",
+      "sectorId": "mul-d",
+      "name": "Raikebox",
+      "orbit": 1,
+      "angle": 1.9320199799299673
+     },
+     {
+      "id": "mul-d.9",
+      "systemId": "mul-d.s3",
+      "sectorId": "mul-d",
+      "name": "Larmen",
+      "orbit": 2,
+      "angle": 1.1901054706355374
+     },
+     {
+      "id": "mul-d.10",
+      "systemId": "mul-d.s3",
+      "sectorId": "mul-d",
+      "name": "Esor",
+      "orbit": 3,
+      "angle": 2.762447095352581
+     },
+     {
+      "id": "mul-d.11",
+      "systemId": "mul-d.s3",
+      "sectorId": "mul-d",
+      "name": "Rebel",
+      "orbit": 4,
+      "angle": 6.26412824055341
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "div-a",
+  "skill": "division",
+  "nameKey": "meta.sector.div-a",
+  "hue": 307.5,
+  "order": 17,
+  "x": 4028,
+  "y": 934,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "div-a.s1",
+    "sectorId": "div-a",
+    "name": "Ovruth",
+    "x": 4008,
+    "y": 812,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "div-a.1",
+      "systemId": "div-a.s1",
+      "sectorId": "div-a",
+      "name": "Fidro",
+      "orbit": 0,
+      "angle": 5.66994735467167
+     },
+     {
+      "id": "div-a.2",
+      "systemId": "div-a.s1",
+      "sectorId": "div-a",
+      "name": "Hoplonsi",
+      "orbit": 1,
+      "angle": 0.3073339072451318
+     },
+     {
+      "id": "div-a.3",
+      "systemId": "div-a.s1",
+      "sectorId": "div-a",
+      "name": "Ruskun",
+      "orbit": 2,
+      "angle": 5.397429936575919
+     }
+    ]
+   },
+   {
+    "id": "div-a.s2",
+    "sectorId": "div-a",
+    "name": "Glodai",
+    "x": 4157,
+    "y": 993,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "div-a.4",
+      "systemId": "div-a.s2",
+      "sectorId": "div-a",
+      "name": "Basus",
+      "orbit": 0,
+      "angle": 4.002154013298923
+     },
+     {
+      "id": "div-a.5",
+      "systemId": "div-a.s2",
+      "sectorId": "div-a",
+      "name": "Nunes",
+      "orbit": 1,
+      "angle": 0.30327910209479314
+     },
+     {
+      "id": "div-a.6",
+      "systemId": "div-a.s2",
+      "sectorId": "div-a",
+      "name": "Fastende",
+      "orbit": 2,
+      "angle": 0.7707263502461107
+     },
+     {
+      "id": "div-a.7",
+      "systemId": "div-a.s2",
+      "sectorId": "div-a",
+      "name": "Vynru",
+      "orbit": 3,
+      "angle": 1.7165312617884767
+     },
+     {
+      "id": "div-a.8",
+      "systemId": "div-a.s2",
+      "sectorId": "div-a",
+      "name": "Hitox",
+      "orbit": 4,
+      "angle": 3.701513234220873
+     }
+    ]
+   },
+   {
+    "id": "div-a.s3",
+    "sectorId": "div-a",
+    "name": "Topu",
+    "x": 3982,
+    "y": 1041,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "div-a.9",
+      "systemId": "div-a.s3",
+      "sectorId": "div-a",
+      "name": "Savezys",
+      "orbit": 0,
+      "angle": 2.7927501794033796
+     },
+     {
+      "id": "div-a.10",
+      "systemId": "div-a.s3",
+      "sectorId": "div-a",
+      "name": "Sarlobom",
+      "orbit": 1,
+      "angle": 5.150926304778784
+     },
+     {
+      "id": "div-a.11",
+      "systemId": "div-a.s3",
+      "sectorId": "div-a",
+      "name": "Hivrorti",
+      "orbit": 2,
+      "angle": 4.48559669215842
+     },
+     {
+      "id": "div-a.12",
+      "systemId": "div-a.s3",
+      "sectorId": "div-a",
+      "name": "Tetostom",
+      "orbit": 3,
+      "angle": 4.387355824169081
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "div-b",
+  "skill": "division",
+  "nameKey": "meta.sector.div-b",
+  "hue": 312.5,
+  "order": 18,
+  "x": 3838,
+  "y": 548,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "div-b.s1",
+    "sectorId": "div-b",
+    "name": "Broglaim",
+    "x": 3769,
+    "y": 625,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "div-b.1",
+      "systemId": "div-b.s1",
+      "sectorId": "div-b",
+      "name": "Plosvu",
+      "orbit": 0,
+      "angle": 3.0670252204254664
+     },
+     {
+      "id": "div-b.2",
+      "systemId": "div-b.s1",
+      "sectorId": "div-b",
+      "name": "Taneglos",
+      "orbit": 1,
+      "angle": 2.730019001369446
+     },
+     {
+      "id": "div-b.3",
+      "systemId": "div-b.s1",
+      "sectorId": "div-b",
+      "name": "Hiseth",
+      "orbit": 2,
+      "angle": 1.631153933411482
+     },
+     {
+      "id": "div-b.4",
+      "systemId": "div-b.s1",
+      "sectorId": "div-b",
+      "name": "Brobrufu",
+      "orbit": 3,
+      "angle": 1.4139223136882875
+     },
+     {
+      "id": "div-b.5",
+      "systemId": "div-b.s1",
+      "sectorId": "div-b",
+      "name": "Tiponver",
+      "orbit": 4,
+      "angle": 5.656174405201614
+     }
+    ]
+   },
+   {
+    "id": "div-b.s2",
+    "sectorId": "div-b",
+    "name": "Stymle",
+    "x": 3904,
+    "y": 674,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "div-b.6",
+      "systemId": "div-b.s2",
+      "sectorId": "div-b",
+      "name": "Bokodeis",
+      "orbit": 0,
+      "angle": 5.924957438168092
+     },
+     {
+      "id": "div-b.7",
+      "systemId": "div-b.s2",
+      "sectorId": "div-b",
+      "name": "Zaso",
+      "orbit": 1,
+      "angle": 2.5871837514108154
+     },
+     {
+      "id": "div-b.8",
+      "systemId": "div-b.s2",
+      "sectorId": "div-b",
+      "name": "Vatoth",
+      "orbit": 2,
+      "angle": 2.325335833742583
+     },
+     {
+      "id": "div-b.9",
+      "systemId": "div-b.s2",
+      "sectorId": "div-b",
+      "name": "Ohas",
+      "orbit": 3,
+      "angle": 3.761244597791922
+     },
+     {
+      "id": "div-b.10",
+      "systemId": "div-b.s2",
+      "sectorId": "div-b",
+      "name": "Skumnoth",
+      "orbit": 4,
+      "angle": 0.029811188087071696
+     }
+    ]
+   },
+   {
+    "id": "div-b.s3",
+    "sectorId": "div-b",
+    "name": "Vryzezes",
+    "x": 3788,
+    "y": 505,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "div-b.11",
+      "systemId": "div-b.s3",
+      "sectorId": "div-b",
+      "name": "Unda",
+      "orbit": 0,
+      "angle": 2.116709283952234
+     },
+     {
+      "id": "div-b.12",
+      "systemId": "div-b.s3",
+      "sectorId": "div-b",
+      "name": "Bedrur",
+      "orbit": 1,
+      "angle": 2.1234272744120735
+     },
+     {
+      "id": "div-b.13",
+      "systemId": "div-b.s3",
+      "sectorId": "div-b",
+      "name": "Viplolus",
+      "orbit": 2,
+      "angle": 1.4379204153855492
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "div-c",
+  "skill": "division",
+  "nameKey": "meta.sector.div-c",
+  "hue": 317.5,
+  "order": 19,
+  "x": 4264,
+  "y": 604,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "div-c.s1",
+    "sectorId": "div-c",
+    "name": "Saigen",
+    "x": 4318,
+    "y": 542,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "div-c.1",
+      "systemId": "div-c.s1",
+      "sectorId": "div-c",
+      "name": "Negu",
+      "orbit": 0,
+      "angle": 3.2497962453208507
+     },
+     {
+      "id": "div-c.2",
+      "systemId": "div-c.s1",
+      "sectorId": "div-c",
+      "name": "Gluseil",
+      "orbit": 1,
+      "angle": 3.837551155283472
+     },
+     {
+      "id": "div-c.3",
+      "systemId": "div-c.s1",
+      "sectorId": "div-c",
+      "name": "Vrosum",
+      "orbit": 2,
+      "angle": 1.9424176687154406
+     },
+     {
+      "id": "div-c.4",
+      "systemId": "div-c.s1",
+      "sectorId": "div-c",
+      "name": "Zainnath",
+      "orbit": 3,
+      "angle": 2.401995457735055
+     }
+    ]
+   },
+   {
+    "id": "div-c.s2",
+    "sectorId": "div-c",
+    "name": "Brodan",
+    "x": 4184,
+    "y": 568,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "div-c.5",
+      "systemId": "div-c.s2",
+      "sectorId": "div-c",
+      "name": "Vrofesi",
+      "orbit": 0,
+      "angle": 0.3121584896483543
+     },
+     {
+      "id": "div-c.6",
+      "systemId": "div-c.s2",
+      "sectorId": "div-c",
+      "name": "Vrepom",
+      "orbit": 1,
+      "angle": 6.213327346709415
+     },
+     {
+      "id": "div-c.7",
+      "systemId": "div-c.s2",
+      "sectorId": "div-c",
+      "name": "Munlathox",
+      "orbit": 2,
+      "angle": 0.45596359577681617
+     },
+     {
+      "id": "div-c.8",
+      "systemId": "div-c.s2",
+      "sectorId": "div-c",
+      "name": "Limnul",
+      "orbit": 3,
+      "angle": 1.2857752981364339
+     }
+    ]
+   },
+   {
+    "id": "div-c.s3",
+    "sectorId": "div-c",
+    "name": "Deipe",
+    "x": 4263,
+    "y": 713,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "div-c.9",
+      "systemId": "div-c.s3",
+      "sectorId": "div-c",
+      "name": "Bonna",
+      "orbit": 0,
+      "angle": 3.662310160341203
+     },
+     {
+      "id": "div-c.10",
+      "systemId": "div-c.s3",
+      "sectorId": "div-c",
+      "name": "Saiseti",
+      "orbit": 1,
+      "angle": 4.075614479759357
+     },
+     {
+      "id": "div-c.11",
+      "systemId": "div-c.s3",
+      "sectorId": "div-c",
+      "name": "Kagamra",
+      "orbit": 2,
+      "angle": 0.16442675632582304
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "div-d",
+  "skill": "division",
+  "nameKey": "meta.sector.div-d",
+  "hue": 322.5,
+  "order": 20,
+  "x": 4429,
+  "y": 1001,
+  "radius": 215,
+  "systems": [
+   {
+    "id": "div-d.s1",
+    "sectorId": "div-d",
+    "name": "Posten",
+    "x": 4411,
+    "y": 1058,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "div-d.1",
+      "systemId": "div-d.s1",
+      "sectorId": "div-d",
+      "name": "Plidi",
+      "orbit": 0,
+      "angle": 0.018629051906215725
+     },
+     {
+      "id": "div-d.2",
+      "systemId": "div-d.s1",
+      "sectorId": "div-d",
+      "name": "Nathem",
+      "orbit": 1,
+      "angle": 3.0305455996914086
+     },
+     {
+      "id": "div-d.3",
+      "systemId": "div-d.s1",
+      "sectorId": "div-d",
+      "name": "Krigia",
+      "orbit": 2,
+      "angle": 0.7955222177449488
+     }
+    ]
+   },
+   {
+    "id": "div-d.s2",
+    "sectorId": "div-d",
+    "name": "Zysra",
+    "x": 4535,
+    "y": 1105,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "div-d.4",
+      "systemId": "div-d.s2",
+      "sectorId": "div-d",
+      "name": "Tromel",
+      "orbit": 0,
+      "angle": 3.0583753515522796
+     },
+     {
+      "id": "div-d.5",
+      "systemId": "div-d.s2",
+      "sectorId": "div-d",
+      "name": "Niskial",
+      "orbit": 1,
+      "angle": 3.230909874902
+     },
+     {
+      "id": "div-d.6",
+      "systemId": "div-d.s2",
+      "sectorId": "div-d",
+      "name": "Krema",
+      "orbit": 2,
+      "angle": 4.9763920616527075
+     },
+     {
+      "id": "div-d.7",
+      "systemId": "div-d.s2",
+      "sectorId": "div-d",
+      "name": "Fordith",
+      "orbit": 3,
+      "angle": 4.329733160456702
+     }
+    ]
+   },
+   {
+    "id": "div-d.s3",
+    "sectorId": "div-d",
+    "name": "Stopla",
+    "x": 4372,
+    "y": 1135,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "div-d.8",
+      "systemId": "div-d.s3",
+      "sectorId": "div-d",
+      "name": "Nofer",
+      "orbit": 0,
+      "angle": 5.156065019581168
+     },
+     {
+      "id": "div-d.9",
+      "systemId": "div-d.s3",
+      "sectorId": "div-d",
+      "name": "Mylkiskos",
+      "orbit": 1,
+      "angle": 2.7491311717309133
+     },
+     {
+      "id": "div-d.10",
+      "systemId": "div-d.s3",
+      "sectorId": "div-d",
+      "name": "Titun",
+      "orbit": 2,
+      "angle": 5.897274266310009
+     },
+     {
+      "id": "div-d.11",
+      "systemId": "div-d.s3",
+      "sectorId": "div-d",
+      "name": "Glormo",
+      "orbit": 3,
+      "angle": 1.1715318911199695
+     },
+     {
+      "id": "div-d.12",
+      "systemId": "div-d.s3",
+      "sectorId": "div-d",
+      "name": "Brisri",
+      "orbit": 4,
+      "angle": 1.2823251170282564
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "neg-10",
+  "skill": "negatives",
+  "nameKey": "meta.sector.neg-10",
+  "hue": 222.5,
+  "order": 21,
+  "x": 3205,
+  "y": 2215,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "neg-10.s1",
+    "sectorId": "neg-10",
+    "name": "Pleman",
+    "x": 3047,
+    "y": 2342,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "neg-10.1",
+      "systemId": "neg-10.s1",
+      "sectorId": "neg-10",
+      "name": "Roraglath",
+      "orbit": 0,
+      "angle": 3.3594256643061935
+     },
+     {
+      "id": "neg-10.2",
+      "systemId": "neg-10.s1",
+      "sectorId": "neg-10",
+      "name": "Skartex",
+      "orbit": 1,
+      "angle": 4.890616268038037
+     },
+     {
+      "id": "neg-10.3",
+      "systemId": "neg-10.s1",
+      "sectorId": "neg-10",
+      "name": "Samvel",
+      "orbit": 2,
+      "angle": 5.976926439914185
+     }
+    ]
+   },
+   {
+    "id": "neg-10.s2",
+    "sectorId": "neg-10",
+    "name": "Nilken",
+    "x": 3336,
+    "y": 2255,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "neg-10.4",
+      "systemId": "neg-10.s2",
+      "sectorId": "neg-10",
+      "name": "Kulde",
+      "orbit": 0,
+      "angle": 3.029116549628595
+     },
+     {
+      "id": "neg-10.5",
+      "systemId": "neg-10.s2",
+      "sectorId": "neg-10",
+      "name": "Skekupo",
+      "orbit": 1,
+      "angle": 0.9769774911940038
+     },
+     {
+      "id": "neg-10.6",
+      "systemId": "neg-10.s2",
+      "sectorId": "neg-10",
+      "name": "Zalneidim",
+      "orbit": 2,
+      "angle": 4.807857713703492
+     }
+    ]
+   },
+   {
+    "id": "neg-10.s3",
+    "sectorId": "neg-10",
+    "name": "Skeba",
+    "x": 3238,
+    "y": 2258,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "neg-10.7",
+      "systemId": "neg-10.s3",
+      "sectorId": "neg-10",
+      "name": "Lurritro",
+      "orbit": 0,
+      "angle": 2.179841029437124
+     },
+     {
+      "id": "neg-10.8",
+      "systemId": "neg-10.s3",
+      "sectorId": "neg-10",
+      "name": "Brokrobu",
+      "orbit": 1,
+      "angle": 4.11473843171471
+     },
+     {
+      "id": "neg-10.9",
+      "systemId": "neg-10.s3",
+      "sectorId": "neg-10",
+      "name": "Doplarer",
+      "orbit": 2,
+      "angle": 1.933991118675808
+     },
+     {
+      "id": "neg-10.10",
+      "systemId": "neg-10.s3",
+      "sectorId": "neg-10",
+      "name": "Theiserni",
+      "orbit": 3,
+      "angle": 4.323059841663332
+     }
+    ]
+   },
+   {
+    "id": "neg-10.s4",
+    "sectorId": "neg-10",
+    "name": "Ovomeix",
+    "x": 3215,
+    "y": 2178,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "neg-10.11",
+      "systemId": "neg-10.s4",
+      "sectorId": "neg-10",
+      "name": "Termos",
+      "orbit": 0,
+      "angle": 5.220221366556251
+     },
+     {
+      "id": "neg-10.12",
+      "systemId": "neg-10.s4",
+      "sectorId": "neg-10",
+      "name": "Momnaskes",
+      "orbit": 1,
+      "angle": 3.655152454742606
+     },
+     {
+      "id": "neg-10.13",
+      "systemId": "neg-10.s4",
+      "sectorId": "neg-10",
+      "name": "Braissir",
+      "orbit": 2,
+      "angle": 2.8400257552037287
+     },
+     {
+      "id": "neg-10.14",
+      "systemId": "neg-10.s4",
+      "sectorId": "neg-10",
+      "name": "Himlel",
+      "orbit": 3,
+      "angle": 5.436220561183993
+     }
+    ]
+   },
+   {
+    "id": "neg-10.s5",
+    "sectorId": "neg-10",
+    "name": "Kikrundem",
+    "x": 3147,
+    "y": 2364,
+    "sunHue": 36,
+    "planets": [
+     {
+      "id": "neg-10.15",
+      "systemId": "neg-10.s5",
+      "sectorId": "neg-10",
+      "name": "Sostal",
+      "orbit": 0,
+      "angle": 5.168134661347336
+     },
+     {
+      "id": "neg-10.16",
+      "systemId": "neg-10.s5",
+      "sectorId": "neg-10",
+      "name": "Pepulmir",
+      "orbit": 1,
+      "angle": 1.1748425917667973
+     },
+     {
+      "id": "neg-10.17",
+      "systemId": "neg-10.s5",
+      "sectorId": "neg-10",
+      "name": "Krallen",
+      "orbit": 2,
+      "angle": 3.023377715108816
+     },
+     {
+      "id": "neg-10.18",
+      "systemId": "neg-10.s5",
+      "sectorId": "neg-10",
+      "name": "Aglestoth",
+      "orbit": 3,
+      "angle": 1.5824205509676348
+     },
+     {
+      "id": "neg-10.19",
+      "systemId": "neg-10.s5",
+      "sectorId": "neg-10",
+      "name": "Sissupith",
+      "orbit": 4,
+      "angle": 2.1579032328055523
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "neg-20",
+  "skill": "negatives",
+  "nameKey": "meta.sector.neg-20",
+  "hue": 227.5,
+  "order": 22,
+  "x": 3803,
+  "y": 2096,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "neg-20.s1",
+    "sectorId": "neg-20",
+    "name": "Stomkugor",
+    "x": 4003,
+    "y": 2024,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "neg-20.1",
+      "systemId": "neg-20.s1",
+      "sectorId": "neg-20",
+      "name": "Krerim",
+      "orbit": 0,
+      "angle": 1.8728868386715647
+     },
+     {
+      "id": "neg-20.2",
+      "systemId": "neg-20.s1",
+      "sectorId": "neg-20",
+      "name": "Vusiastul",
+      "orbit": 1,
+      "angle": 5.880699745331825
+     },
+     {
+      "id": "neg-20.3",
+      "systemId": "neg-20.s1",
+      "sectorId": "neg-20",
+      "name": "Zukithe",
+      "orbit": 2,
+      "angle": 3.9588151354207013
+     },
+     {
+      "id": "neg-20.4",
+      "systemId": "neg-20.s1",
+      "sectorId": "neg-20",
+      "name": "Thestor",
+      "orbit": 3,
+      "angle": 4.0063738312198485
+     }
+    ]
+   },
+   {
+    "id": "neg-20.s2",
+    "sectorId": "neg-20",
+    "name": "Boser",
+    "x": 3895,
+    "y": 2064,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "neg-20.5",
+      "systemId": "neg-20.s2",
+      "sectorId": "neg-20",
+      "name": "Oveir",
+      "orbit": 0,
+      "angle": 4.233889753336947
+     },
+     {
+      "id": "neg-20.6",
+      "systemId": "neg-20.s2",
+      "sectorId": "neg-20",
+      "name": "Likrial",
+      "orbit": 1,
+      "angle": 0.7860465506339507
+     },
+     {
+      "id": "neg-20.7",
+      "systemId": "neg-20.s2",
+      "sectorId": "neg-20",
+      "name": "Tresto",
+      "orbit": 2,
+      "angle": 4.515961025663361
+     },
+     {
+      "id": "neg-20.8",
+      "systemId": "neg-20.s2",
+      "sectorId": "neg-20",
+      "name": "Fikurvo",
+      "orbit": 3,
+      "angle": 3.2006188818691266
+     }
+    ]
+   },
+   {
+    "id": "neg-20.s3",
+    "sectorId": "neg-20",
+    "name": "Tidedel",
+    "x": 3819,
+    "y": 2189,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "neg-20.9",
+      "systemId": "neg-20.s3",
+      "sectorId": "neg-20",
+      "name": "Tratri",
+      "orbit": 0,
+      "angle": 5.0032735090528915
+     },
+     {
+      "id": "neg-20.10",
+      "systemId": "neg-20.s3",
+      "sectorId": "neg-20",
+      "name": "Skintum",
+      "orbit": 1,
+      "angle": 2.7762737017319497
+     },
+     {
+      "id": "neg-20.11",
+      "systemId": "neg-20.s3",
+      "sectorId": "neg-20",
+      "name": "Brathax",
+      "orbit": 2,
+      "angle": 3.186320194751415
+     }
+    ]
+   },
+   {
+    "id": "neg-20.s4",
+    "sectorId": "neg-20",
+    "name": "Drolu",
+    "x": 3647,
+    "y": 2080,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "neg-20.12",
+      "systemId": "neg-20.s4",
+      "sectorId": "neg-20",
+      "name": "Ommin",
+      "orbit": 0,
+      "angle": 6.139141218753696
+     },
+     {
+      "id": "neg-20.13",
+      "systemId": "neg-20.s4",
+      "sectorId": "neg-20",
+      "name": "Stiathol",
+      "orbit": 1,
+      "angle": 1.7021307745903829
+     },
+     {
+      "id": "neg-20.14",
+      "systemId": "neg-20.s4",
+      "sectorId": "neg-20",
+      "name": "Stiapol",
+      "orbit": 2,
+      "angle": 4.81657416436722
+     }
+    ]
+   },
+   {
+    "id": "neg-20.s5",
+    "sectorId": "neg-20",
+    "name": "Pluvres",
+    "x": 3791,
+    "y": 2304,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "neg-20.15",
+      "systemId": "neg-20.s5",
+      "sectorId": "neg-20",
+      "name": "Suty",
+      "orbit": 0,
+      "angle": 1.61224911705857
+     },
+     {
+      "id": "neg-20.16",
+      "systemId": "neg-20.s5",
+      "sectorId": "neg-20",
+      "name": "Hasnu",
+      "orbit": 1,
+      "angle": 1.4001751393718687
+     },
+     {
+      "id": "neg-20.17",
+      "systemId": "neg-20.s5",
+      "sectorId": "neg-20",
+      "name": "Vraleibe",
+      "orbit": 2,
+      "angle": 5.5844755334900995
+     },
+     {
+      "id": "neg-20.18",
+      "systemId": "neg-20.s5",
+      "sectorId": "neg-20",
+      "name": "Emviath",
+      "orbit": 3,
+      "angle": 4.485780175732676
+     },
+     {
+      "id": "neg-20.19",
+      "systemId": "neg-20.s5",
+      "sectorId": "neg-20",
+      "name": "Dumsarein",
+      "orbit": 4,
+      "angle": 5.224717964189019
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "miss-add",
+  "skill": "missing",
+  "nameKey": "meta.sector.miss-add",
+  "hue": 352.5,
+  "order": 23,
+  "x": 4278,
+  "y": 1535,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "miss-add.s1",
+    "sectorId": "miss-add",
+    "name": "Emesku",
+    "x": 4445,
+    "y": 1523,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "miss-add.1",
+      "systemId": "miss-add.s1",
+      "sectorId": "miss-add",
+      "name": "Vrinril",
+      "orbit": 0,
+      "angle": 5.122051009755415
+     },
+     {
+      "id": "miss-add.2",
+      "systemId": "miss-add.s1",
+      "sectorId": "miss-add",
+      "name": "Stadrox",
+      "orbit": 1,
+      "angle": 0.3862020196642975
+     },
+     {
+      "id": "miss-add.3",
+      "systemId": "miss-add.s1",
+      "sectorId": "miss-add",
+      "name": "Sugla",
+      "orbit": 2,
+      "angle": 4.669919565923109
+     },
+     {
+      "id": "miss-add.4",
+      "systemId": "miss-add.s1",
+      "sectorId": "miss-add",
+      "name": "Drirkos",
+      "orbit": 3,
+      "angle": 1.0138265002059947
+     },
+     {
+      "id": "miss-add.5",
+      "systemId": "miss-add.s1",
+      "sectorId": "miss-add",
+      "name": "Mutruth",
+      "orbit": 4,
+      "angle": 5.99319062769146
+     }
+    ]
+   },
+   {
+    "id": "miss-add.s2",
+    "sectorId": "miss-add",
+    "name": "Krianvo",
+    "x": 4383,
+    "y": 1485,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "miss-add.6",
+      "systemId": "miss-add.s2",
+      "sectorId": "miss-add",
+      "name": "Veske",
+      "orbit": 0,
+      "angle": 5.551671384711344
+     },
+     {
+      "id": "miss-add.7",
+      "systemId": "miss-add.s2",
+      "sectorId": "miss-add",
+      "name": "Anen",
+      "orbit": 1,
+      "angle": 3.3538521453810444
+     },
+     {
+      "id": "miss-add.8",
+      "systemId": "miss-add.s2",
+      "sectorId": "miss-add",
+      "name": "Osnin",
+      "orbit": 2,
+      "angle": 3.6348029994718276
+     }
+    ]
+   },
+   {
+    "id": "miss-add.s3",
+    "sectorId": "miss-add",
+    "name": "Skamabox",
+    "x": 4428,
+    "y": 1649,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "miss-add.9",
+      "systemId": "miss-add.s3",
+      "sectorId": "miss-add",
+      "name": "Festi",
+      "orbit": 0,
+      "angle": 1.9418844526305648
+     },
+     {
+      "id": "miss-add.10",
+      "systemId": "miss-add.s3",
+      "sectorId": "miss-add",
+      "name": "Furma",
+      "orbit": 1,
+      "angle": 1.5373081804277535
+     },
+     {
+      "id": "miss-add.11",
+      "systemId": "miss-add.s3",
+      "sectorId": "miss-add",
+      "name": "Niglial",
+      "orbit": 2,
+      "angle": 2.011593110607402
+     },
+     {
+      "id": "miss-add.12",
+      "systemId": "miss-add.s3",
+      "sectorId": "miss-add",
+      "name": "Staskaith",
+      "orbit": 3,
+      "angle": 1.494418847034864
+     }
+    ]
+   },
+   {
+    "id": "miss-add.s4",
+    "sectorId": "miss-add",
+    "name": "Plasame",
+    "x": 4139,
+    "y": 1668,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "miss-add.13",
+      "systemId": "miss-add.s4",
+      "sectorId": "miss-add",
+      "name": "Amom",
+      "orbit": 0,
+      "angle": 5.389187023716941
+     },
+     {
+      "id": "miss-add.14",
+      "systemId": "miss-add.s4",
+      "sectorId": "miss-add",
+      "name": "Krianuth",
+      "orbit": 1,
+      "angle": 2.1308977826172972
+     },
+     {
+      "id": "miss-add.15",
+      "systemId": "miss-add.s4",
+      "sectorId": "miss-add",
+      "name": "Vitami",
+      "orbit": 2,
+      "angle": 2.9597702008691047
+     }
+    ]
+   },
+   {
+    "id": "miss-add.s5",
+    "sectorId": "miss-add",
+    "name": "Mumkos",
+    "x": 4338,
+    "y": 1636,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "miss-add.16",
+      "systemId": "miss-add.s5",
+      "sectorId": "miss-add",
+      "name": "Trerral",
+      "orbit": 0,
+      "angle": 0.32254281028841925
+     },
+     {
+      "id": "miss-add.17",
+      "systemId": "miss-add.s5",
+      "sectorId": "miss-add",
+      "name": "Tipleth",
+      "orbit": 1,
+      "angle": 1.7941199104442695
+     },
+     {
+      "id": "miss-add.18",
+      "systemId": "miss-add.s5",
+      "sectorId": "miss-add",
+      "name": "Lilvi",
+      "orbit": 2,
+      "angle": 0.4342707457596827
+     },
+     {
+      "id": "miss-add.19",
+      "systemId": "miss-add.s5",
+      "sectorId": "miss-add",
+      "name": "Konror",
+      "orbit": 3,
+      "angle": 5.23359736783468
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "miss-sub",
+  "skill": "missing",
+  "nameKey": "meta.sector.miss-sub",
+  "hue": 357.5,
+  "order": 24,
+  "x": 4428,
+  "y": 2290,
+  "radius": 305,
+  "systems": [
+   {
+    "id": "miss-sub.s1",
+    "sectorId": "miss-sub",
+    "name": "Mepoth",
+    "x": 4622,
+    "y": 2320,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "miss-sub.1",
+      "systemId": "miss-sub.s1",
+      "sectorId": "miss-sub",
+      "name": "Vrohia",
+      "orbit": 0,
+      "angle": 5.844846180389789
+     },
+     {
+      "id": "miss-sub.2",
+      "systemId": "miss-sub.s1",
+      "sectorId": "miss-sub",
+      "name": "Glithu",
+      "orbit": 1,
+      "angle": 4.457549465821721
+     },
+     {
+      "id": "miss-sub.3",
+      "systemId": "miss-sub.s1",
+      "sectorId": "miss-sub",
+      "name": "Zagleil",
+      "orbit": 2,
+      "angle": 4.423367875804152
+     },
+     {
+      "id": "miss-sub.4",
+      "systemId": "miss-sub.s1",
+      "sectorId": "miss-sub",
+      "name": "Hapar",
+      "orbit": 3,
+      "angle": 4.785587689839037
+     },
+     {
+      "id": "miss-sub.5",
+      "systemId": "miss-sub.s1",
+      "sectorId": "miss-sub",
+      "name": "Breirni",
+      "orbit": 4,
+      "angle": 3.9077559399831214
+     }
+    ]
+   },
+   {
+    "id": "miss-sub.s2",
+    "sectorId": "miss-sub",
+    "name": "Skabra",
+    "x": 4489,
+    "y": 2211,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "miss-sub.6",
+      "systemId": "miss-sub.s2",
+      "sectorId": "miss-sub",
+      "name": "Thupu",
+      "orbit": 0,
+      "angle": 2.9174682890646824
+     },
+     {
+      "id": "miss-sub.7",
+      "systemId": "miss-sub.s2",
+      "sectorId": "miss-sub",
+      "name": "Glostethi",
+      "orbit": 1,
+      "angle": 0.8379028769666602
+     },
+     {
+      "id": "miss-sub.8",
+      "systemId": "miss-sub.s2",
+      "sectorId": "miss-sub",
+      "name": "Trerdirai",
+      "orbit": 2,
+      "angle": 0.9103819360561097
+     },
+     {
+      "id": "miss-sub.9",
+      "systemId": "miss-sub.s2",
+      "sectorId": "miss-sub",
+      "name": "Adetror",
+      "orbit": 3,
+      "angle": 3.964746911280118
+     },
+     {
+      "id": "miss-sub.10",
+      "systemId": "miss-sub.s2",
+      "sectorId": "miss-sub",
+      "name": "Bome",
+      "orbit": 4,
+      "angle": 1.984524155145326
+     }
+    ]
+   },
+   {
+    "id": "miss-sub.s3",
+    "sectorId": "miss-sub",
+    "name": "Kirtosten",
+    "x": 4444,
+    "y": 2481,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "miss-sub.11",
+      "systemId": "miss-sub.s3",
+      "sectorId": "miss-sub",
+      "name": "Adryx",
+      "orbit": 0,
+      "angle": 1.4922978206284576
+     },
+     {
+      "id": "miss-sub.12",
+      "systemId": "miss-sub.s3",
+      "sectorId": "miss-sub",
+      "name": "Tuvro",
+      "orbit": 1,
+      "angle": 5.522999419208895
+     },
+     {
+      "id": "miss-sub.13",
+      "systemId": "miss-sub.s3",
+      "sectorId": "miss-sub",
+      "name": "Zosar",
+      "orbit": 2,
+      "angle": 5.466364427082716
+     },
+     {
+      "id": "miss-sub.14",
+      "systemId": "miss-sub.s3",
+      "sectorId": "miss-sub",
+      "name": "Glythi",
+      "orbit": 3,
+      "angle": 1.7559903229253295
+     }
+    ]
+   },
+   {
+    "id": "miss-sub.s4",
+    "sectorId": "miss-sub",
+    "name": "Gleisellu",
+    "x": 4297,
+    "y": 2375,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "miss-sub.15",
+      "systemId": "miss-sub.s4",
+      "sectorId": "miss-sub",
+      "name": "Vrehe",
+      "orbit": 0,
+      "angle": 3.314279232644673
+     },
+     {
+      "id": "miss-sub.16",
+      "systemId": "miss-sub.s4",
+      "sectorId": "miss-sub",
+      "name": "Fystugath",
+      "orbit": 1,
+      "angle": 0.8772587482509557
+     },
+     {
+      "id": "miss-sub.17",
+      "systemId": "miss-sub.s4",
+      "sectorId": "miss-sub",
+      "name": "Drolai",
+      "orbit": 2,
+      "angle": 1.7449718346124927
+     },
+     {
+      "id": "miss-sub.18",
+      "systemId": "miss-sub.s4",
+      "sectorId": "miss-sub",
+      "name": "Thyra",
+      "orbit": 3,
+      "angle": 3.452200273061037
+     },
+     {
+      "id": "miss-sub.19",
+      "systemId": "miss-sub.s4",
+      "sectorId": "miss-sub",
+      "name": "Asti",
+      "orbit": 4,
+      "angle": 1.3840920418348717
+     }
+    ]
+   },
+   {
+    "id": "miss-sub.s5",
+    "sectorId": "miss-sub",
+    "name": "Sino",
+    "x": 4417,
+    "y": 2260,
+    "sunHue": 205,
+    "planets": [
+     {
+      "id": "miss-sub.20",
+      "systemId": "miss-sub.s5",
+      "sectorId": "miss-sub",
+      "name": "Sekas",
+      "orbit": 0,
+      "angle": 5.859961614671156
+     },
+     {
+      "id": "miss-sub.21",
+      "systemId": "miss-sub.s5",
+      "sectorId": "miss-sub",
+      "name": "Trokax",
+      "orbit": 1,
+      "angle": 6.214541006954664
+     },
+     {
+      "id": "miss-sub.22",
+      "systemId": "miss-sub.s5",
+      "sectorId": "miss-sub",
+      "name": "Ruria",
+      "orbit": 2,
+      "angle": 3.4092829452677824
+     },
+     {
+      "id": "miss-sub.23",
+      "systemId": "miss-sub.s5",
+      "sectorId": "miss-sub",
+      "name": "Ziadra",
+      "orbit": 3,
+      "angle": 0.008460911059478356
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "miss-mul",
+  "skill": "missing",
+  "nameKey": "meta.sector.miss-mul",
+  "hue": 2.5,
+  "order": 25,
+  "x": 1168,
+  "y": 2379,
+  "radius": 260,
+  "systems": [
+   {
+    "id": "miss-mul.s1",
+    "sectorId": "miss-mul",
+    "name": "Plahur",
+    "x": 1048,
+    "y": 2418,
+    "sunHue": 12,
+    "planets": [
+     {
+      "id": "miss-mul.1",
+      "systemId": "miss-mul.s1",
+      "sectorId": "miss-mul",
+      "name": "Zuvru",
+      "orbit": 0,
+      "angle": 1.7560115630329223
+     },
+     {
+      "id": "miss-mul.2",
+      "systemId": "miss-mul.s1",
+      "sectorId": "miss-mul",
+      "name": "Lasli",
+      "orbit": 1,
+      "angle": 5.228625162368078
+     },
+     {
+      "id": "miss-mul.3",
+      "systemId": "miss-mul.s1",
+      "sectorId": "miss-mul",
+      "name": "Trirem",
+      "orbit": 2,
+      "angle": 4.478171060428195
+     },
+     {
+      "id": "miss-mul.4",
+      "systemId": "miss-mul.s1",
+      "sectorId": "miss-mul",
+      "name": "Teinos",
+      "orbit": 3,
+      "angle": 1.6260007342571956
+     }
+    ]
+   },
+   {
+    "id": "miss-mul.s2",
+    "sectorId": "miss-mul",
+    "name": "Drykros",
+    "x": 1168,
+    "y": 2411,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "miss-mul.5",
+      "systemId": "miss-mul.s2",
+      "sectorId": "miss-mul",
+      "name": "Veigluth",
+      "orbit": 0,
+      "angle": 3.148133889898541
+     },
+     {
+      "id": "miss-mul.6",
+      "systemId": "miss-mul.s2",
+      "sectorId": "miss-mul",
+      "name": "Nuvrusu",
+      "orbit": 1,
+      "angle": 2.5743378955522136
+     },
+     {
+      "id": "miss-mul.7",
+      "systemId": "miss-mul.s2",
+      "sectorId": "miss-mul",
+      "name": "Korsuth",
+      "orbit": 2,
+      "angle": 6.009592667702263
+     },
+     {
+      "id": "miss-mul.8",
+      "systemId": "miss-mul.s2",
+      "sectorId": "miss-mul",
+      "name": "Brebuska",
+      "orbit": 3,
+      "angle": 0.1892996332952719
+     }
+    ]
+   },
+   {
+    "id": "miss-mul.s3",
+    "sectorId": "miss-mul",
+    "name": "Peku",
+    "x": 1178,
+    "y": 2518,
+    "sunHue": 215,
+    "planets": [
+     {
+      "id": "miss-mul.9",
+      "systemId": "miss-mul.s3",
+      "sectorId": "miss-mul",
+      "name": "Bakriaru",
+      "orbit": 0,
+      "angle": 2.430111909355265
+     },
+     {
+      "id": "miss-mul.10",
+      "systemId": "miss-mul.s3",
+      "sectorId": "miss-mul",
+      "name": "Zoskeis",
+      "orbit": 1,
+      "angle": 0.24856610929617312
+     },
+     {
+      "id": "miss-mul.11",
+      "systemId": "miss-mul.s3",
+      "sectorId": "miss-mul",
+      "name": "Damvana",
+      "orbit": 2,
+      "angle": 2.6013029121476756
+     }
+    ]
+   },
+   {
+    "id": "miss-mul.s4",
+    "sectorId": "miss-mul",
+    "name": "Tryfeplu",
+    "x": 1135,
+    "y": 2295,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "miss-mul.12",
+      "systemId": "miss-mul.s4",
+      "sectorId": "miss-mul",
+      "name": "Glaidriko",
+      "orbit": 0,
+      "angle": 3.76250296773951
+     },
+     {
+      "id": "miss-mul.13",
+      "systemId": "miss-mul.s4",
+      "sectorId": "miss-mul",
+      "name": "Fitrekur",
+      "orbit": 1,
+      "angle": 5.7691342127852945
+     },
+     {
+      "id": "miss-mul.14",
+      "systemId": "miss-mul.s4",
+      "sectorId": "miss-mul",
+      "name": "Taidri",
+      "orbit": 2,
+      "angle": 0.1286377192373459
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "miss-div",
+  "skill": "missing",
+  "nameKey": "meta.sector.miss-div",
+  "hue": 7.5,
+  "order": 26,
+  "x": 938,
+  "y": 1913,
+  "radius": 260,
+  "systems": [
+   {
+    "id": "miss-div.s1",
+    "sectorId": "miss-div",
+    "name": "Vravulle",
+    "x": 914,
+    "y": 2016,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "miss-div.1",
+      "systemId": "miss-div.s1",
+      "sectorId": "miss-div",
+      "name": "Natha",
+      "orbit": 0,
+      "angle": 1.1669213789822042
+     },
+     {
+      "id": "miss-div.2",
+      "systemId": "miss-div.s1",
+      "sectorId": "miss-div",
+      "name": "Seisar",
+      "orbit": 1,
+      "angle": 2.2774697115607494
+     },
+     {
+      "id": "miss-div.3",
+      "systemId": "miss-div.s1",
+      "sectorId": "miss-div",
+      "name": "Neibedra",
+      "orbit": 2,
+      "angle": 0.0007946205277059394
+     },
+     {
+      "id": "miss-div.4",
+      "systemId": "miss-div.s1",
+      "sectorId": "miss-div",
+      "name": "Vreibrun",
+      "orbit": 3,
+      "angle": 4.5834559096904846
+     },
+     {
+      "id": "miss-div.5",
+      "systemId": "miss-div.s1",
+      "sectorId": "miss-div",
+      "name": "Kuhe",
+      "orbit": 4,
+      "angle": 0.09977227111556845
+     }
+    ]
+   },
+   {
+    "id": "miss-div.s2",
+    "sectorId": "miss-div",
+    "name": "Kilnal",
+    "x": 802,
+    "y": 1913,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "miss-div.6",
+      "systemId": "miss-div.s2",
+      "sectorId": "miss-div",
+      "name": "Skiplor",
+      "orbit": 0,
+      "angle": 5.753140790663639
+     },
+     {
+      "id": "miss-div.7",
+      "systemId": "miss-div.s2",
+      "sectorId": "miss-div",
+      "name": "Glithal",
+      "orbit": 1,
+      "angle": 4.8429156443155925
+     },
+     {
+      "id": "miss-div.8",
+      "systemId": "miss-div.s2",
+      "sectorId": "miss-div",
+      "name": "Dastemin",
+      "orbit": 2,
+      "angle": 1.9841741680869605
+     }
+    ]
+   },
+   {
+    "id": "miss-div.s3",
+    "sectorId": "miss-div",
+    "name": "Bruvran",
+    "x": 1051,
+    "y": 1972,
+    "sunHue": 44,
+    "planets": [
+     {
+      "id": "miss-div.9",
+      "systemId": "miss-div.s3",
+      "sectorId": "miss-div",
+      "name": "Staslos",
+      "orbit": 0,
+      "angle": 4.752334049240001
+     },
+     {
+      "id": "miss-div.10",
+      "systemId": "miss-div.s3",
+      "sectorId": "miss-div",
+      "name": "Geigli",
+      "orbit": 1,
+      "angle": 4.784495840930576
+     },
+     {
+      "id": "miss-div.11",
+      "systemId": "miss-div.s3",
+      "sectorId": "miss-div",
+      "name": "Plunusrar",
+      "orbit": 2,
+      "angle": 4.778217647532906
+     },
+     {
+      "id": "miss-div.12",
+      "systemId": "miss-div.s3",
+      "sectorId": "miss-div",
+      "name": "Utias",
+      "orbit": 3,
+      "angle": 4.9491079021636635
+     }
+    ]
+   },
+   {
+    "id": "miss-div.s4",
+    "sectorId": "miss-div",
+    "name": "Dogath",
+    "x": 1023,
+    "y": 1893,
+    "sunHue": 52,
+    "planets": [
+     {
+      "id": "miss-div.13",
+      "systemId": "miss-div.s4",
+      "sectorId": "miss-div",
+      "name": "Thudri",
+      "orbit": 0,
+      "angle": 3.2790353285717453
+     },
+     {
+      "id": "miss-div.14",
+      "systemId": "miss-div.s4",
+      "sectorId": "miss-div",
+      "name": "Ninte",
+      "orbit": 1,
+      "angle": 4.702277795327532
+     },
+     {
+      "id": "miss-div.15",
+      "systemId": "miss-div.s4",
+      "sectorId": "miss-div",
+      "name": "Verriafer",
+      "orbit": 2,
+      "angle": 4.820543077208371
+     },
+     {
+      "id": "miss-div.16",
+      "systemId": "miss-div.s4",
+      "sectorId": "miss-div",
+      "name": "Glankas",
+      "orbit": 3,
+      "angle": 0.6731825378519356
+     },
+     {
+      "id": "miss-div.17",
+      "systemId": "miss-div.s4",
+      "sectorId": "miss-div",
+      "name": "Supe",
+      "orbit": 4,
+      "angle": 2.6990027520695947
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "core",
+  "skill": "mixed",
+  "nameKey": "meta.sector.core",
+  "hue": 45,
+  "order": 27,
+  "x": 2400,
+  "y": 1350,
+  "radius": 125,
+  "systems": [
+   {
+    "id": "core.s1",
+    "sectorId": "core",
+    "name": "Ikru",
+    "x": 2409,
+    "y": 1341,
+    "sunHue": 24,
+    "planets": [
+     {
+      "id": "core.1",
+      "systemId": "core.s1",
+      "sectorId": "core",
+      "name": "Gemtis",
+      "orbit": 0,
+      "angle": 5.97882487602024
+     }
+    ]
+   }
+  ]
+ }
+]
